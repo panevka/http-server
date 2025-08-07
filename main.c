@@ -14,12 +14,7 @@ int main(void) {
   struct sockaddr_storage new_addr;
   socklen_t addr_size;
 
-  int binding;
-  struct protoent *protocolptr; // pointer to a protocol
   struct addrinfo hints, *res, *p;
-
-  char *msg = "wazzup";
-  int len, bytes_sent;
 
   int rv;
   int yes = 1;
@@ -76,11 +71,6 @@ int main(void) {
             perror("accept");
             continue;
         }
-
-        // inet_ntop(new_addr.ss_family,
-        //     get_in_addr((struct sockaddr *)&new_addr),
-        //     s, sizeof s);
-        // printf("server: got connection from %s\n", s);
 
         if (!fork()) { // this is the child process
             close(sock); // child doesn't need the listener
