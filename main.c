@@ -1,4 +1,5 @@
 #include <netdb.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,27 @@
 #define LISTEN_BACKLOG 10
 #define PORT "3000"
 #define PROTOCOL_NAME "tcp"
+
+
+char* read_file(void){
+  FILE* fptr;
+  u_long file_size; 
+  char* file_buffer;
+
+  fptr = fopen("./static/index.html", "r");
+
+  fseek(fptr, 0, SEEK_END);
+  file_size = ftell(fptr);
+  rewind(fptr);
+
+  file_buffer = (char*) malloc(file_size + 1);
+  fread(file_buffer, file_size, 1, fptr);
+  fclose(fptr);
+
+  printf("%s", file_buffer);
+
+  return file_buffer;
+}
 
 int main(void) {
   int sock, new_sock; // socket
@@ -74,7 +96,8 @@ int main(void) {
 
         if (!fork()) { // this is the child process
             close(sock); // child doesn't need the listener
-            if (send(new_sock, "Hello, world!", 13, 0) == -1)
+            char* html_file = read_file();
+            if (send(new_sock, html_file, 1025, 0) == -1)
                 perror("send");
             close(new_sock);
             exit(0);
