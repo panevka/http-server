@@ -96,9 +96,26 @@ int main(void) {
 
         if (!fork()) { // this is the child process
             close(sock); // child doesn't need the listener
+            long sent_bytes = 0;
             char* html_file = read_file();
-            if (send(new_sock, html_file, 1025, 0) == -1)
-                perror("send");
+            char* headers = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 1110\r\nConnection: close\r\n\r\n";
+            size_t headers_size = strlen(headers);
+            printf("%lu", headers_size);
+
+            char* shared_buffer = malloc(2000);
+            memcpy(shared_buffer, headers, headers_size);
+            memcpy(shared_buffer + headers_size, html_file, 1025);
+
+            while(1){
+                sent_bytes += send(new_sock, shared_buffer, 1025 + headers_size, 0);
+                if(sent_bytes == -1) {
+                  perror("send");
+                  break;
+                  }
+                if(sent_bytes == (headers_size + 1025))
+                  break;
+              }
+            shutdown(new_sock, SHUT_WR);
             close(new_sock);
             exit(0);
         }
