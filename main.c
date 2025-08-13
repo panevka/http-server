@@ -11,7 +11,7 @@
 #define PROTOCOL_NAME "tcp"
 
 char *get_headers(size_t body_length) {
-  char *headers = "HTTP/1.1 200 OK\r\n"
+ const char headers[] = "HTTP/1.1 200 OK\r\n"
                   "Content-Type: text/html\r\n"
                   "Content-Length: %lu\r\n"
                   "Connection: close\r\n\r\n";
