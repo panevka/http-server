@@ -43,7 +43,6 @@ char *read_file(void) {
   fseek(fptr, 0, SEEK_END);
   file_size = ftell(fptr);
   rewind(fptr);
-
   file_buffer = (char *)malloc(file_size + 1);
   fread(file_buffer, file_size, 1, fptr);
   fclose(fptr);
@@ -126,7 +125,7 @@ int main(void) {
       const char* headers = get_headers(html_file_size);
       size_t headers_size = strlen(headers);
 
-      size_t full_size;
+      size_t full_size = headers_size + html_file_size;
       char *shared_buffer = malloc(full_size + 1);
 
       strcpy(shared_buffer, headers);
