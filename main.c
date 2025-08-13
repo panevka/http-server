@@ -25,7 +25,9 @@ char *get_headers(size_t body_length) {
   char *headers_buffer = malloc(size);
   if(!headers_buffer) return NULL;
 
-  snprintf(headers_buffer, size, headers, body_length);
+  if(snprintf(headers_buffer, size, headers, body_length) < 0){
+    return NULL;
+  }
 
   return headers_buffer;
 }
