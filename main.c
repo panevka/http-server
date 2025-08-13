@@ -15,29 +15,12 @@ char *get_headers(u_long body_length) {
                   "Content-Type: text/html\r\n"
                   "Content-Length: %lu\r\n"
                   "Connection: close\r\n\r\n";
-  u_long current_content_count = 3; // %lu
 
-  u_long headers_length = strlen(headers);
-  u_long content_length = headers_length + body_length; // 9999
+  size_t size = snprintf(NULL, 0, headers, body_length) + 1; 
+  char *headers_buffer = malloc(size);
+  if(!headers_buffer) return NULL;
 
-  u_long content_count = (u_long)snprintf(NULL, 0, "%lu", content_length); // 4
-
-  while (1) {
-
-    if (content_count > current_content_count) {
-      content_length += (content_count - current_content_count);
-      current_content_count = content_count;
-    } else if (current_content_count > content_count) {
-      content_length -= current_content_count - content_count;
-      current_content_count = content_count;
-    } else {
-      break;
-    }
-  }
-
-  char *headers_buffer = malloc(current_content_count + 1);
-  snprintf(headers_buffer, current_content_count + 1, headers,
-           current_content_count); // 4
+  sprintf(headers_buffer, size, headers, body_length);
 
   return headers_buffer;
 }
