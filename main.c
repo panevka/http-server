@@ -16,7 +16,12 @@ char *get_headers(size_t body_length) {
                   "Content-Length: %lu\r\n"
                   "Connection: close\r\n\r\n";
 
-  size_t size = snprintf(NULL, 0, headers, body_length) + 1; 
+  int needed = snprintf(NULL, 0, headers, body_length); 
+
+  if(needed < 0) return NULL;
+
+  size_t size = (size_t)needed + 1;
+
   char *headers_buffer = malloc(size);
   if(!headers_buffer) return NULL;
 
