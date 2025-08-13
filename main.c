@@ -48,6 +48,8 @@ char *read_file(void) {
   fread(file_buffer, file_size, 1, fptr);
   fclose(fptr);
 
+  file_buffer[file_size] = '\0';
+
   printf("%s", file_buffer);
 
   return file_buffer;
