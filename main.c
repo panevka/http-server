@@ -10,7 +10,7 @@
 #define PORT "3000"
 #define PROTOCOL_NAME "tcp"
 
-char *get_headers(u_long body_length) {
+char *get_headers(size_t body_length) {
   char *headers = "HTTP/1.1 200 OK\r\n"
                   "Content-Type: text/html\r\n"
                   "Content-Length: %lu\r\n"
@@ -20,7 +20,7 @@ char *get_headers(u_long body_length) {
   char *headers_buffer = malloc(size);
   if(!headers_buffer) return NULL;
 
-  sprintf(headers_buffer, size, headers, body_length);
+  snprintf(headers_buffer, size, headers, body_length);
 
   return headers_buffer;
 }
