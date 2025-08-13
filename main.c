@@ -10,11 +10,42 @@
 #define PORT "3000"
 #define PROTOCOL_NAME "tcp"
 
+char* get_headers(u_long body_length) {
+  char *headers = "HTTP/1.1 200 OK\r\n"
+                  "Content-Type: text/html\r\n"
+                  "Content-Length: %lu\r\n"
+                  "Connection: close\r\n\r\n";
+  u_long current_content_count = 3; // %lu
 
-char* read_file(void){
-  FILE* fptr;
-  u_long file_size; 
-  char* file_buffer;
+  u_long headers_length = strlen(headers);
+  u_long content_length = headers_length + body_length; // 9999
+
+  u_long content_count = (u_long)snprintf(NULL, 0, "%lu", content_length); // 4
+
+  while (1) {
+
+    if (content_count > current_content_count) {
+      content_length += (content_count - current_content_count);
+      current_content_count = content_count;
+    } else if (current_content_count > content_count) {
+      content_length -= current_content_count - content_count;
+      current_content_count = content_count;
+    } else {
+      break;
+    }
+  }
+
+  char* headers_buffer = malloc(current_content_count + 1);
+  snprintf(headers_buffer, current_content_count + 1, headers, current_content_count); // 4
+
+  return headers_buffer;
+}
+
+char *read_file(void) {
+
+  FILE *fptr;
+  u_long file_size;
+  char *file_buffer;
 
   fptr = fopen("./static/index.html", "r");
 
