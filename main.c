@@ -54,11 +54,9 @@ char *read_file(void) {
   return file_buffer;
 }
 
-int main(void) {
-  int sock, new_sock; // socket
-  struct sockaddr_storage new_addr;
-  socklen_t addr_size;
+int initialize_socket(){
 
+  int sock;
   struct addrinfo hints, *res, *p;
 
   int rv;
@@ -107,6 +105,16 @@ int main(void) {
   }
 
   printf("server: waiting for connections...\n");
+
+  return sock;
+}
+
+int main(void) {
+  int sock, new_sock; // socket
+  struct sockaddr_storage new_addr;
+  socklen_t addr_size;
+
+  sock = initialize_socket();
 
   while (1) { // main accept() loop
     addr_size = sizeof new_addr;
