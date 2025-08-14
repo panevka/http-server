@@ -110,22 +110,22 @@ int initialize_socket(){
 }
 
 int main(void) {
-  int sock, new_sock; // socket
+  int socket, new_socket;
   struct sockaddr_storage new_addr;
   socklen_t addr_size;
 
-  sock = initialize_socket();
+  socket = initialize_socket();
 
   while (1) { // main accept() loop
     addr_size = sizeof new_addr;
-    new_sock = accept(sock, (struct sockaddr *)&new_addr, &addr_size);
-    if (new_sock == -1) {
+    new_socket = accept(socket, (struct sockaddr *)&new_addr, &addr_size);
+    if (new_socket == -1) {
       perror("accept");
       continue;
     }
 
     if (!fork()) { // this is the child process
-      close(sock); // child doesn't need the listener
+      close(socket); // child doesn't need the listener
       long sent_bytes = 0;
       const char* html_file = read_file();
       size_t html_file_size = strlen(html_file);
@@ -140,7 +140,7 @@ int main(void) {
       strncat(shared_buffer, html_file, full_size + 1);
 
       while (1) {
-        sent_bytes += send(new_sock, shared_buffer, full_size, 0);
+        sent_bytes += send(new_socket, shared_buffer, full_size, 0);
         if (sent_bytes == -1) {
           perror("send");
           break;
@@ -148,11 +148,11 @@ int main(void) {
         if (sent_bytes == (full_size))
           break;
       }
-      shutdown(new_sock, SHUT_WR);
-      close(new_sock);
+      shutdown(new_socket, SHUT_WR);
+      close(new_socket);
       exit(0);
     }
-    close(new_sock); // parent doesn't need this
+    close(new_socket); // parent doesn't need this
   }
 
   return EXIT_SUCCESS;
