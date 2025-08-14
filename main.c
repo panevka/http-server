@@ -69,7 +69,7 @@ int initialize_socket(){
 
   if ((rv = getaddrinfo(NULL, PORT, &hints, &res)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-    return 1;
+    return -1;
   }
 
   for (p = res; p != NULL; p = p->ai_next) {
@@ -80,7 +80,7 @@ int initialize_socket(){
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
       perror("setsockopt");
-      exit(1);
+      return -1;
     }
 
     if (bind(sock, p->ai_addr, p->ai_addrlen) == -1) {
@@ -96,12 +96,12 @@ int initialize_socket(){
 
   if (p == NULL) {
     fprintf(stderr, "server: failed to bind\n");
-    exit(1);
+    return -1;
   }
 
   if (listen(sock, LISTEN_BACKLOG) == -1) {
     perror("listen");
-    exit(1);
+    return -1;
   }
 
   printf("server: waiting for connections...\n");
@@ -115,6 +115,11 @@ int main(void) {
   socklen_t addr_size;
 
   socket = initialize_socket();
+  
+  if(socket == -1) {
+    perror("socket initalization failed");
+    exit(1);
+  }
 
   while (1) { // main accept() loop
     addr_size = sizeof new_addr;
