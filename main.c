@@ -54,7 +54,7 @@ char *read_file(void) {
   return file_buffer;
 }
 
-int initialize_socket(){
+int initialize_socket(void){
 
   int sock;
   struct addrinfo hints, *res, *p;
