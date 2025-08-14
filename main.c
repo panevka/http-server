@@ -110,27 +110,26 @@ int initialize_socket(){
 }
 
 int main(void) {
-  int socket, new_socket;
+  int socket_fd, new_socket;
   struct sockaddr_storage new_addr;
   socklen_t addr_size;
 
-  socket = initialize_socket();
-  
-  if(socket == -1) {
+  socket_fd = initialize_socket();
+  if(socket_fd == -1) {
     perror("socket initalization failed");
     exit(1);
   }
 
   while (1) { // main accept() loop
     addr_size = sizeof new_addr;
-    new_socket = accept(socket, (struct sockaddr *)&new_addr, &addr_size);
+    new_socket = accept(socket_fd, (struct sockaddr *)&new_addr, &addr_size);
     if (new_socket == -1) {
       perror("accept");
       continue;
     }
 
     if (!fork()) { // this is the child process
-      close(socket); // child doesn't need the listener
+      close(socket_fd); // child doesn't need the listener
       long sent_bytes = 0;
       const char* html_file = read_file();
       size_t html_file_size = strlen(html_file);
