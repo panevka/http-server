@@ -135,7 +135,7 @@ int main(void) {
     }
 
     if (!fork()) { // this is the child process
-      char buffer[2048];
+      char buffer[8192];
       ssize_t received_size = read(new_socket, buffer, sizeof(buffer));
       if (received_size > 0) {
           buffer[received_size] = '\0';
