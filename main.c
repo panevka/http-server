@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "./src/request.h"
 
 #define LISTEN_BACKLOG 10
 #define PORT "3000"
@@ -32,13 +33,18 @@ char *get_headers(size_t body_length) {
   return headers_buffer;
 }
 
-char *read_file(void) {
+char *read_file(char* path) {
 
   FILE *fptr;
   u_long file_size;
   char *file_buffer;
+  char file_path[4096];
+  const char * const file_dir = "./static/";
+  strncpy(file_path, file_dir, 4095);
+  strncat(file_path, path, 4095 - sizeof(file_dir));
 
-  fptr = fopen("./static/index.html", "r");
+
+  fptr = fopen(file_path, "r");
 
   fseek(fptr, 0, SEEK_END);
   file_size = ftell(fptr);
@@ -129,9 +135,15 @@ int main(void) {
     }
 
     if (!fork()) { // this is the child process
+      char buffer[2048];
+      ssize_t received_size = read(new_socket, buffer, sizeof(buffer));
+      if (received_size > 0) {
+          buffer[received_size] = '\0';
+          resolve_request_headers(buffer, sizeof(buffer));
+      }
       close(socket_fd); // child doesn't need the listener
       long sent_bytes = 0;
-      const char* html_file = read_file();
+      const char* html_file = read_file("index.html");
       size_t html_file_size = strlen(html_file);
 
       const char* headers = get_headers(html_file_size);
