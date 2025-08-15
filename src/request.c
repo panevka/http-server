@@ -1,18 +1,24 @@
+#include "request.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define MAX_METHOD_LENGTH 3
-#define MAX_URI_LENGTH 8000
-#define MAX_PROTOCOL_LENGTH 20
 
-void resolve_request_headers(char *headers, size_t len){
+struct request_start_line *resolve_request_headers(char *headers, size_t len){
 
-  char method[MAX_METHOD_LENGTH + 1] = {0};
-  char uri[MAX_URI_LENGTH + 1] = {0};
-  char protocol[MAX_PROTOCOL_LENGTH + 1] = {0};
+  struct request_start_line *result = malloc(sizeof(result));
+  if(!result) return NULL;
+
+    char *method = malloc(MAX_METHOD_LENGTH + 1);
+    char *uri = malloc(MAX_URI_LENGTH + 1);
+    char *protocol = malloc(MAX_PROTOCOL_LENGTH + 1);
+    if (!method || !uri || !protocol) {
+            free(method); free(uri); free(protocol); free(result);
+            return NULL;
+        }
 
   const char *sp1 = memchr(headers, ' ', len);
-  if(!sp1) return;
+  if(!sp1) return NULL;
 
   size_t method_len = (size_t) (sp1 - headers);
   if(method_len > MAX_METHOD_LENGTH) method_len = MAX_METHOD_LENGTH;
@@ -20,7 +26,7 @@ void resolve_request_headers(char *headers, size_t len){
   method[method_len] = '\0';
 
   const char *sp2 = memchr(sp1 + 1, ' ', len - (sp1 + 1 - headers));
-    if (!sp2) return;
+    if (!sp2) return NULL;
 
   size_t uri_len = sp2 - (sp1 + 1);
   if (uri_len > MAX_URI_LENGTH) uri_len = MAX_URI_LENGTH;
@@ -38,5 +44,12 @@ void resolve_request_headers(char *headers, size_t len){
   printf("Method: %s\n", method);
   printf("URI: %s\n", uri);
   printf("Protocol version: %s\n", protocol);
+
+
+  result->method = method;
+  result->uri = uri;
+  result->protocol = protocol;
+
+  return result;
 
 }
