@@ -5,7 +5,7 @@
 
 struct request_start_line *resolve_request_headers(char *headers, size_t len) {
 
-  struct request_start_line *result = malloc(sizeof(result));
+  struct request_start_line *result = malloc(sizeof(*result));
   if (!result)
     return NULL;
 
@@ -54,9 +54,9 @@ struct request_start_line *resolve_request_headers(char *headers, size_t len) {
   printf("URI: %s\n", uri);
   printf("Protocol version: %s\n", protocol);
 
-  result->method = method;
-  result->uri = uri;
-  result->protocol = protocol;
+  strncpy(result->method, method, sizeof(result->method));
+  strncpy(result->uri, uri, sizeof(result->uri));
+  strncpy(result->protocol, protocol, sizeof(result->protocol));
 
   return result;
 }
