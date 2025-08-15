@@ -1,7 +1,7 @@
 build:
-	gcc main.c -o a.out
+	gcc main.c src/request.c -o a.out
 build-debug:
-	gcc -g main.c -o a.out
+	gcc -g main.c src/request.c -o a.out
 run:
 	./a.out
 start:
