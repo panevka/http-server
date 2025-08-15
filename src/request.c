@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_METHOD_LENGTH 3
+#define MAX_URI_LENGTH 8000
+#define MAX_PROTOCOL_LENGTH 20
+
 void resolve_request_headers(char *headers, size_t len){
-  const size_t MAX_METHOD_LENGTH = 3;
-  const size_t MAX_URI_LENGTH = 8000;
-  const size_t MAX_PROTOCOL_LENGTH = 20;
 
   char method[MAX_METHOD_LENGTH + 1] = {0};
   char uri[MAX_URI_LENGTH + 1] = {0};
@@ -27,7 +28,7 @@ void resolve_request_headers(char *headers, size_t len){
   uri[uri_len] = '\0';
 
   const char *crlf = memchr(sp2 + 1, '\r', len - (sp2 + 1 - headers));
-  if (!crlf) crlf = headers + len; // no CRLF found
+  if (!crlf) crlf = headers + len;
 
   size_t proto_len = crlf - (sp2 + 1);
   if (proto_len > MAX_PROTOCOL_LENGTH) proto_len = MAX_PROTOCOL_LENGTH;
