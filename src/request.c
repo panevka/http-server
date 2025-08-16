@@ -124,14 +124,14 @@ void handle_request(int sock) {
   resolve_request_headers(buffer, received_size);
 
   long sent_bytes = 0;
-  const char * const html_file = read_file("index.html");
+  const char *const html_file = read_file("index.html");
   const size_t html_file_size = strlen(html_file);
 
   const char *headers = get_headers(html_file_size);
   const size_t headers_size = strlen(headers);
 
   const size_t full_size = headers_size + html_file_size;
-  char * const shared_buffer = malloc(full_size + 1);
+  char *const shared_buffer = malloc(full_size + 1);
 
   strcpy(shared_buffer, headers);
   strncat(shared_buffer, html_file, full_size + 1);
