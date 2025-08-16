@@ -113,7 +113,7 @@ char *read_file(char* path) {
 }
 
 
-void handle_request(char *r_data, size_t r_size, unsigned int sock){
+void handle_request(char *r_data, size_t r_size, int sock){
 
       resolve_request_headers(r_data, r_size);
       long sent_bytes = 0;
