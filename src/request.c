@@ -122,8 +122,9 @@ void handle_request(int sock) {
   buffer[received_size] = '\0';
 
   resolve_request_headers(buffer, received_size);
+
   long sent_bytes = 0;
-  const char *html_file = read_file("index.html");
+  const char * const html_file = read_file("index.html");
   size_t html_file_size = strlen(html_file);
 
   const char *headers = get_headers(html_file_size);
