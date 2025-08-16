@@ -88,6 +88,7 @@ int main(void) {
     if (!fork()) {      // this is the child process
       close(socket_fd); // child doesn't need the listener
       handle_request(new_socket);
+      close(new_socket);
       exit(0);
     }
     close(new_socket); // parent doesn't need this

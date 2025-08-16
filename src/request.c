@@ -146,5 +146,4 @@ void handle_request(int sock) {
       break;
   }
   shutdown(sock, SHUT_WR);
-  close(sock);
 }
