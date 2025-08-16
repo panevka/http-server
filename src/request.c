@@ -113,9 +113,13 @@ char *read_file(char* path) {
 }
 
 
-void handle_request(char *r_data, size_t r_size, int sock){
-
-      resolve_request_headers(r_data, r_size);
+void handle_request(int sock){
+      char buffer[8192];
+      ssize_t received_size = read(sock, buffer, sizeof(buffer));
+      if (received_size > 0) {
+          buffer[received_size] = '\0';
+      }
+      resolve_request_headers(buffer, received_size);
       long sent_bytes = 0;
       const char* html_file = read_file("index.html");
       size_t html_file_size = strlen(html_file);

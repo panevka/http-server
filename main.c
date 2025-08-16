@@ -85,14 +85,9 @@ int main(void) {
       continue;
     }
 
-    if (!fork()) { // this is the child process
-      char buffer[8192];
-      ssize_t received_size = read(new_socket, buffer, sizeof(buffer));
-      if (received_size > 0) {
-          buffer[received_size] = '\0';
-          handle_request(buffer, received_size, new_socket);
-      }
+    if (!fork()) {// this is the child process
       close(socket_fd); // child doesn't need the listener
+      handle_request(new_socket);
       exit(0);
     }
     close(new_socket); // parent doesn't need this
