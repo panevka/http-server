@@ -17,7 +17,7 @@ struct request_start_line *resolve_request_headers(char *headers, size_t len);
 
 void handle_request(int sock);
 
-char *get_headers(size_t body_length);
+char *create_headers(size_t body_length);
 
 char *read_file(char *path);
 
