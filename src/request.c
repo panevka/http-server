@@ -114,7 +114,7 @@ char *read_file(char* path) {
 
 
 void handle_request(int sock){
-      char buffer[8192];
+      char buffer[MAX_REQUEST_SIZE];
       ssize_t received_size = read(sock, buffer, sizeof(buffer));
       if (received_size > 0) {
           buffer[received_size] = '\0';
