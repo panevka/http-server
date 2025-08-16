@@ -14,4 +14,10 @@ struct request_start_line {
 
 struct request_start_line *resolve_request_headers(char *headers, size_t len);
 
+void handle_request(char *r_data, size_t r_size, unsigned int sock);
+
+char *get_headers(size_t body_length);
+
+char *read_file(char* path);
+
 #endif
