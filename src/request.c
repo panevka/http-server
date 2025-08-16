@@ -64,37 +64,38 @@ struct request_start_line *resolve_request_headers(char *headers, size_t len) {
 }
 
 char *get_headers(size_t body_length) {
- const char headers[] = "HTTP/1.1 200 OK\r\n"
-                  "Content-Type: text/html\r\n"
-                  "Content-Length: %lu\r\n"
-                  "Connection: close\r\n\r\n";
+  const char headers[] = "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: text/html\r\n"
+                         "Content-Length: %lu\r\n"
+                         "Connection: close\r\n\r\n";
 
-  int needed = snprintf(NULL, 0, headers, body_length); 
+  int needed = snprintf(NULL, 0, headers, body_length);
 
-  if(needed < 0) return NULL;
+  if (needed < 0)
+    return NULL;
 
   size_t size = (size_t)needed + 1;
 
   char *headers_buffer = malloc(size);
-  if(!headers_buffer) return NULL;
+  if (!headers_buffer)
+    return NULL;
 
-  if(snprintf(headers_buffer, size, headers, body_length) < 0){
+  if (snprintf(headers_buffer, size, headers, body_length) < 0) {
     return NULL;
   }
 
   return headers_buffer;
 }
 
-char *read_file(char* path) {
+char *read_file(char *path) {
 
   FILE *fptr;
   u_long file_size;
   char *file_buffer;
   char file_path[4096];
-  const char * const file_dir = "./static/";
+  const char *const file_dir = "./static/";
   strncpy(file_path, file_dir, 4095);
   strncat(file_path, path, 4095 - sizeof(file_dir));
-
 
   fptr = fopen(file_path, "r");
 
@@ -112,37 +113,36 @@ char *read_file(char* path) {
   return file_buffer;
 }
 
+void handle_request(int sock) {
+  char buffer[MAX_REQUEST_SIZE];
+  ssize_t received_size = read(sock, buffer, sizeof(buffer));
+  if (received_size > 0) {
+    buffer[received_size] = '\0';
+  }
+  resolve_request_headers(buffer, received_size);
+  long sent_bytes = 0;
+  const char *html_file = read_file("index.html");
+  size_t html_file_size = strlen(html_file);
 
-void handle_request(int sock){
-      char buffer[MAX_REQUEST_SIZE];
-      ssize_t received_size = read(sock, buffer, sizeof(buffer));
-      if (received_size > 0) {
-          buffer[received_size] = '\0';
-      }
-      resolve_request_headers(buffer, received_size);
-      long sent_bytes = 0;
-      const char* html_file = read_file("index.html");
-      size_t html_file_size = strlen(html_file);
+  const char *headers = get_headers(html_file_size);
+  size_t headers_size = strlen(headers);
 
-      const char* headers = get_headers(html_file_size);
-      size_t headers_size = strlen(headers);
+  size_t full_size = headers_size + html_file_size;
+  char *shared_buffer = malloc(full_size + 1);
 
-      size_t full_size = headers_size + html_file_size;
-      char *shared_buffer = malloc(full_size + 1);
+  strcpy(shared_buffer, headers);
+  strncat(shared_buffer, html_file, full_size + 1);
 
-      strcpy(shared_buffer, headers);
-      strncat(shared_buffer, html_file, full_size + 1);
-
-      while (1) {
-        sent_bytes += send(sock, shared_buffer, full_size, 0);
-        if (sent_bytes == -1) {
-          perror("send");
-          break;
-        }
-        if (sent_bytes == (full_size))
-          break;
-      }
-      shutdown(sock, SHUT_WR);
-      close(sock);
-    // resolve_request_headers(r_data, r_size);
+  while (1) {
+    sent_bytes += send(sock, shared_buffer, full_size, 0);
+    if (sent_bytes == -1) {
+      perror("send");
+      break;
+    }
+    if (sent_bytes == (full_size))
+      break;
+  }
+  shutdown(sock, SHUT_WR);
+  close(sock);
+  // resolve_request_headers(r_data, r_size);
 }

@@ -1,3 +1,4 @@
+#include "./src/request.h"
 #include <netdb.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -5,13 +6,12 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "./src/request.h"
 
 #define LISTEN_BACKLOG 10
 #define PORT "3000"
 #define PROTOCOL_NAME "tcp"
 
-int initialize_socket(void){
+int initialize_socket(void) {
 
   int sock;
   struct addrinfo hints, *res, *p;
@@ -72,7 +72,7 @@ int main(void) {
   socklen_t addr_size;
 
   socket_fd = initialize_socket();
-  if(socket_fd == -1) {
+  if (socket_fd == -1) {
     perror("socket initalization failed");
     exit(1);
   }
@@ -85,7 +85,7 @@ int main(void) {
       continue;
     }
 
-    if (!fork()) {// this is the child process
+    if (!fork()) {      // this is the child process
       close(socket_fd); // child doesn't need the listener
       handle_request(new_socket);
       exit(0);
