@@ -147,5 +147,4 @@ void handle_request(int sock) {
   }
   shutdown(sock, SHUT_WR);
   close(sock);
-  // resolve_request_headers(r_data, r_size);
 }
