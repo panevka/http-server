@@ -96,7 +96,7 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
   strncpy(file_path, file_dir, MAX_FILE_PATH_LENGTH);
   strncat(file_path, path, sizeof(file_path) - strlen(file_path) - 1);
 
-  fptr = fopen(file_path, "r");
+  fptr = fopen(file_path, "rb");
   if (!fptr) {
     perror("Could not open file");
     return -1;
