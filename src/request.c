@@ -97,7 +97,8 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
 
   fptr = fopen(file_path, "rb");
   if (!fptr) {
-    perror("Could not open file");
+    fprintf(stderr, "Could not open file %s: ", file_path);
+    perror("");
     return -1;
   }
 
