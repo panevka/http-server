@@ -113,8 +113,8 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
   rewind(fptr);
 
   unsigned long read_bytes = fread(file_buffer, sizeof(char), len, fptr);
-  if (read_bytes != len) {
-    perror("Could not read full file content");
+  if (ferror(fptr)) {
+    perror("fread failed");
     return -1;
   }
   if (fclose(fptr) != 0) {
