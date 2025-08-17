@@ -89,7 +89,7 @@ char *create_headers(size_t body_length) {
 }
 
 ssize_t read_file(const char *path, char *file_buffer, size_t len) {
-  FILE *fptr;
+  FILE *fptr = NULL;
   long file_size;
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
