@@ -23,6 +23,6 @@ void handle_request(int sock);
 
 char *create_headers(size_t body_length);
 
-ssize_t read_file(char *path, char *file_buffer, size_t len);
+ssize_t read_file(const char *path, char *file_buffer, size_t len);
 
 #endif

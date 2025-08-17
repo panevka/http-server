@@ -87,7 +87,7 @@ char *create_headers(size_t body_length) {
   return headers_buffer;
 }
 
-ssize_t read_file(char *path, char *file_buffer, size_t len) {
+ssize_t read_file(const char *path, char *file_buffer, size_t len) {
   FILE *fptr;
   long file_size;
 
