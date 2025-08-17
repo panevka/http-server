@@ -91,7 +91,7 @@ char *create_headers(size_t body_length) {
 
 ssize_t read_file(const char *path, char *file_buffer, size_t len) {
   FILE *fptr = NULL;
-  long file_size;
+  off_t file_size;
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
@@ -107,11 +107,12 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
     return -1;
   }
 
-  if (fseek(fptr, 0, SEEK_END) == -1) {
+  if (fseeko(fptr, 0, SEEK_END) != 0) {
     perror("Could not go to file end");
     return -1;
   }
-  if ((file_size = ftell(fptr)) == -1) {
+  file_size = ftello(fptr);
+  if (file_size == -1) {
     perror("Could not verify file size");
     return -1;
   }
