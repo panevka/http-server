@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 struct request_start_line *resolve_request_headers(char *headers, size_t len) {
@@ -89,7 +90,7 @@ char *create_headers(size_t body_length) {
   return headers_buffer;
 }
 
-ssize_t read_file(const char *path, char *file_buffer, size_t len) {
+off_t read_file(const char *path, char *file_buffer, size_t len) {
   FILE *fptr = NULL;
   off_t file_size;
 
