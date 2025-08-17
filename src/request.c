@@ -97,7 +97,12 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
   int n = snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
-  if (n < 0 || (size_t)n >= sizeof(file_path)) {
+
+  if (n < 0) {
+    fprintf(stderr, "Encoding error in snprintf\n");
+    return -1;
+  }
+  if ((size_t)n >= sizeof(file_path)) {
     fprintf(stderr, "Path too long\n");
     return -1;
   }
