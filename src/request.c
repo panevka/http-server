@@ -1,4 +1,5 @@
 #include "request.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -97,8 +98,7 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
 
   fptr = fopen(file_path, "rb");
   if (!fptr) {
-    fprintf(stderr, "Could not open file %s: ", file_path);
-    perror("");
+    fprintf(stderr, "Could not open file %s: %s\n", file_path, strerror(errno));
     return -1;
   }
 
