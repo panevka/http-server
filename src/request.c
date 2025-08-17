@@ -111,8 +111,14 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
   }
   rewind(fptr);
 
-  fread(file_buffer, sizeof(char), len, fptr);
-  fclose(fptr);
+  unsigned long read_bytes = fread(file_buffer, sizeof(char), len, fptr);
+  if (read_bytes != file_size) {
+    perror("Could not read full file content");
+    return -1;
+  }
+  if (fclose(fptr) != 0) {
+    perror("Warning: could not close the file");
+  }
 
   printf("%s\n", file_buffer);
 
