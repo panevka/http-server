@@ -93,8 +93,7 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
-  strncpy(file_path, file_dir, MAX_FILE_PATH_LENGTH);
-  strncat(file_path, path, sizeof(file_path) - strlen(file_path) - 1);
+  snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
 
   fptr = fopen(file_path, "rb");
   if (!fptr) {
