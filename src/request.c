@@ -109,11 +109,17 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
 
   if (fseeko(fptr, 0, SEEK_END) != 0) {
     perror("Could not go to file end");
+    if (fclose(fptr) != 0) {
+      perror("Warning: could not close the file");
+    }
     return -1;
   }
   file_size = ftello(fptr);
   if (file_size == -1) {
     perror("Could not verify file size");
+    if (fclose(fptr) != 0) {
+      perror("Warning: could not close the file");
+    }
     return -1;
   }
   rewind(fptr);
@@ -121,6 +127,9 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
   fread(file_buffer, sizeof(char), len, fptr);
   if (ferror(fptr)) {
     perror("fread failed");
+    if (fclose(fptr) != 0) {
+      perror("Warning: could not close the file");
+    }
     return -1;
   }
   if (fptr) {
