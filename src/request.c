@@ -1,5 +1,6 @@
 #include "request.h"
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,7 +95,11 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
-  snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
+  int n = snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
+  if (n < 0 || (size_t)n >= sizeof(file_path)) {
+    fprintf(stderr, "Path too long\n");
+    return -1;
+  }
 
   fptr = fopen(file_path, "rb");
   if (!fptr) {
