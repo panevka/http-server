@@ -117,8 +117,10 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
     perror("fread failed");
     return -1;
   }
-  if (fclose(fptr) != 0) {
-    perror("Warning: could not close the file");
+  if (fptr) {
+    if (fclose(fptr) != 0) {
+      perror("Warning: could not close the file");
+    }
   }
 
   printf("%s\n", file_buffer);
