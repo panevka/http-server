@@ -89,7 +89,7 @@ char *create_headers(size_t body_length) {
 
 ssize_t read_file(char *path, char *file_buffer, size_t len) {
   FILE *fptr;
-  ssize_t file_size;
+  long file_size;
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
