@@ -112,7 +112,7 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
   }
   rewind(fptr);
 
-  fread(file_buffer, len, sizeof(char), fptr);
+  fread(file_buffer, sizeof(char), len, fptr);
   fclose(fptr);
 
   printf("%s\n", file_buffer);
