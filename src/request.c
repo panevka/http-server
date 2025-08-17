@@ -97,9 +97,19 @@ ssize_t read_file(char *path, char *file_buffer, size_t len) {
   strncat(file_path, path, sizeof(file_path) - strlen(file_path) - 1);
 
   fptr = fopen(file_path, "r");
+  if (!fptr) {
+    perror("Could not open file");
+    return -1;
+  }
 
-  fseek(fptr, 0, SEEK_END);
-  file_size = ftell(fptr);
+  if (fseek(fptr, 0, SEEK_END) == -1) {
+    perror("Could not go to file end");
+    return -1;
+  }
+  if ((file_size = ftell(fptr)) == -1) {
+    perror("Could not verify file size");
+    return -1;
+  }
   rewind(fptr);
 
   fread(file_buffer, len, sizeof(char), fptr);
