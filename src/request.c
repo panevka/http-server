@@ -87,30 +87,27 @@ char *create_headers(size_t body_length) {
   return headers_buffer;
 }
 
-char *read_file(char *path) {
-
+ssize_t read_file(char *path, char *file_buffer, size_t len) {
   FILE *fptr;
-  u_long file_size;
-  char *file_buffer;
-  char file_path[4096];
-  const char *const file_dir = "./static/";
-  strncpy(file_path, file_dir, 4095);
-  strncat(file_path, path, 4095 - sizeof(file_dir));
+  ssize_t file_size;
+
+  char file_path[MAX_FILE_PATH_LENGTH + 1];
+  const char file_dir[] = "./static/";
+  strncpy(file_path, file_dir, MAX_FILE_PATH_LENGTH);
+  strncat(file_path, path, sizeof(file_path) - strlen(file_path) - 1);
 
   fptr = fopen(file_path, "r");
 
   fseek(fptr, 0, SEEK_END);
   file_size = ftell(fptr);
   rewind(fptr);
-  file_buffer = (char *)malloc(file_size + 1);
-  fread(file_buffer, file_size, 1, fptr);
+
+  fread(file_buffer, len, sizeof(char), fptr);
   fclose(fptr);
 
-  file_buffer[file_size] = '\0';
+  printf("%s\n", file_buffer);
 
-  printf("%s", file_buffer);
-
-  return file_buffer;
+  return file_size;
 }
 
 void handle_request(int sock) {
@@ -124,17 +121,17 @@ void handle_request(int sock) {
   resolve_request_headers(buffer, received_size);
 
   long sent_bytes = 0;
-  const char *const html_file = read_file("index.html");
-  const size_t html_file_size = strlen(html_file);
+  char response_buffer[MAX_FILE_SIZE];
+  ssize_t file_size = read_file("index.html", response_buffer, MAX_FILE_SIZE);
 
-  const char *headers = create_headers(html_file_size);
+  const char *headers = create_headers(file_size);
   const size_t headers_size = strlen(headers);
 
-  const size_t full_size = headers_size + html_file_size;
+  const size_t full_size = headers_size + file_size;
   char *const shared_buffer = malloc(full_size + 1);
 
   strcpy(shared_buffer, headers);
-  strncat(shared_buffer, html_file, full_size + 1);
+  strncat(shared_buffer, response_buffer, full_size + 1);
 
   while (1) {
     sent_bytes += send(sock, shared_buffer, full_size, 0);
