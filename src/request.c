@@ -124,7 +124,7 @@ ssize_t read_file(const char *path, char *file_buffer, size_t len) {
   }
   rewind(fptr);
 
-  fread(file_buffer, sizeof(char), len, fptr);
+  fread(file_buffer, 1, len, fptr);
   if (ferror(fptr)) {
     perror("fread failed");
     if (fclose(fptr) != 0) {
