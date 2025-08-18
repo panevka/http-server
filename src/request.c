@@ -22,8 +22,10 @@ int get_start_line(char *request, size_t request_len,
   }
 
   size_t method_len = (size_t)(sp1 - request);
-  if (method_len > MAX_METHOD_LENGTH)
-    method_len = MAX_METHOD_LENGTH;
+  if (method_len >= sizeof(method)) {
+    fprintf(stderr, "Method too long\n");
+    return -1;
+  }
   memcpy(method, request, method_len);
   method[method_len] = '\0';
 
