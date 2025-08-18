@@ -102,23 +102,28 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
 
   char file_path[MAX_FILE_PATH_LENGTH + 1];
   const char file_dir[] = "./static/";
+
+  // Build file path
   int n = snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
 
   if (n < 0) {
     fprintf(stderr, "Encoding error in snprintf\n");
     return -1;
   }
+
   if ((size_t)n >= sizeof(file_path)) {
     fprintf(stderr, "Path too long\n");
     return -1;
   }
 
+  // Open file
   fptr = fopen(file_path, "rb");
   if (!fptr) {
     fprintf(stderr, "Could not open file %s: %s\n", file_path, strerror(errno));
     return -1;
   }
 
+  // Determine file size
   if (fseeko(fptr, 0, SEEK_END) != 0) {
     perror("Could not go to file end");
     close_file(fptr);
@@ -132,6 +137,7 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   }
   rewind(fptr);
 
+  // Read into file buffer
   fread(file_buffer, 1, len, fptr);
   if (ferror(fptr)) {
     perror("fread failed");
