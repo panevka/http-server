@@ -90,6 +90,12 @@ char *create_headers(size_t body_length) {
   return headers_buffer;
 }
 
+static void close_file(FILE *f) {
+  if (f && fclose(f) != 0) {
+    perror("Warning: could not close the file");
+  }
+}
+
 off_t read_file(const char *path, char *file_buffer, size_t len) {
   FILE *fptr = NULL;
   off_t file_size;
@@ -115,17 +121,13 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
 
   if (fseeko(fptr, 0, SEEK_END) != 0) {
     perror("Could not go to file end");
-    if (fclose(fptr) != 0) {
-      perror("Warning: could not close the file");
-    }
+    close_file(fptr);
     return -1;
   }
   file_size = ftello(fptr);
   if (file_size == -1) {
     perror("Could not verify file size");
-    if (fclose(fptr) != 0) {
-      perror("Warning: could not close the file");
-    }
+    close_file(fptr);
     return -1;
   }
   rewind(fptr);
@@ -133,14 +135,10 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   fread(file_buffer, 1, len, fptr);
   if (ferror(fptr)) {
     perror("fread failed");
-    if (fclose(fptr) != 0) {
-      perror("Warning: could not close the file");
-    }
+    close_file(fptr);
     return -1;
   }
-  if (fclose(fptr) != 0) {
-    perror("Warning: could not close the file");
-  }
+  close_file(fptr);
 
   printf("%s\n", file_buffer);
 
