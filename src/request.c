@@ -153,12 +153,11 @@ void handle_request(int sock) {
   buffer[received_size] = '\0';
 
   struct request_start_line start_line;
-
   get_start_line(buffer, received_size, &start_line);
 
   long sent_bytes = 0;
   char response_buffer[MAX_FILE_SIZE];
-  ssize_t file_size = read_file("index.html", response_buffer, MAX_FILE_SIZE);
+  ssize_t file_size = read_file(start_line.uri, response_buffer, MAX_FILE_SIZE);
 
   const char *headers = create_headers(file_size);
   const size_t headers_size = strlen(headers);
