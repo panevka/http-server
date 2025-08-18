@@ -8,36 +8,28 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-struct request_start_line *resolve_request_headers(char *headers, size_t len) {
+int get_start_line(char *request, size_t request_len,
+                   struct request_start_line *start_line) {
 
-  struct request_start_line *result = malloc(sizeof(*result));
-  if (!result)
-    return NULL;
+  char method[sizeof(start_line->method)];
+  char uri[sizeof(start_line->uri)];
+  char protocol[sizeof(start_line->protocol)];
 
-  char *method = malloc(MAX_METHOD_LENGTH + 1);
-  char *uri = malloc(MAX_URI_LENGTH + 1);
-  char *protocol = malloc(MAX_PROTOCOL_LENGTH + 1);
-  if (!method || !uri || !protocol) {
-    free(method);
-    free(uri);
-    free(protocol);
-    free(result);
-    return NULL;
-  }
-
-  const char *sp1 = memchr(headers, ' ', len);
+  // Find first delimiter (space)
+  const char *sp1 = memchr(request, ' ', request_len);
   if (!sp1)
-    return NULL;
+    return -1;
 
-  size_t method_len = (size_t)(sp1 - headers);
+  size_t method_len = (size_t)(sp1 - request);
   if (method_len > MAX_METHOD_LENGTH)
     method_len = MAX_METHOD_LENGTH;
-  memcpy(method, headers, method_len);
+  memcpy(method, request, method_len);
   method[method_len] = '\0';
 
-  const char *sp2 = memchr(sp1 + 1, ' ', len - (sp1 + 1 - headers));
+  // Find second delimiter (space)
+  const char *sp2 = memchr(sp1 + 1, ' ', request_len - (sp1 + 1 - request));
   if (!sp2)
-    return NULL;
+    return -1;
 
   size_t uri_len = sp2 - (sp1 + 1);
   if (uri_len > MAX_URI_LENGTH)
@@ -45,9 +37,10 @@ struct request_start_line *resolve_request_headers(char *headers, size_t len) {
   memcpy(uri, sp1 + 1, uri_len);
   uri[uri_len] = '\0';
 
-  const char *crlf = memchr(sp2 + 1, '\r', len - (sp2 + 1 - headers));
+  // Find third delimiter (carriage return and line feed)
+  const char *crlf = memchr(sp2 + 1, '\r', request_len - (sp2 + 1 - request));
   if (!crlf)
-    crlf = headers + len;
+    crlf = request + request_len;
 
   size_t proto_len = crlf - (sp2 + 1);
   if (proto_len > MAX_PROTOCOL_LENGTH)
@@ -59,11 +52,11 @@ struct request_start_line *resolve_request_headers(char *headers, size_t len) {
   printf("URI: %s\n", uri);
   printf("Protocol version: %s\n", protocol);
 
-  strncpy(result->method, method, sizeof(result->method));
-  strncpy(result->uri, uri, sizeof(result->uri));
-  strncpy(result->protocol, protocol, sizeof(result->protocol));
+  snprintf(start_line->method, sizeof(start_line->method), "%s", method);
+  snprintf(start_line->uri, sizeof(start_line->uri), "%s", uri);
+  snprintf(start_line->protocol, sizeof(start_line->protocol), "%s", protocol);
 
-  return result;
+  return 0;
 }
 
 char *create_headers(size_t body_length) {
@@ -159,7 +152,9 @@ void handle_request(int sock) {
   }
   buffer[received_size] = '\0';
 
-  resolve_request_headers(buffer, received_size);
+  struct request_start_line start_line;
+
+  get_start_line(buffer, received_size, &start_line);
 
   long sent_bytes = 0;
   char response_buffer[MAX_FILE_SIZE];

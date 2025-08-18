@@ -17,7 +17,8 @@ struct request_start_line {
   char protocol[MAX_PROTOCOL_LENGTH + 1];
 };
 
-struct request_start_line *resolve_request_headers(char *headers, size_t len);
+int get_start_line(char *request, size_t request_len,
+                   struct request_start_line *start_line);
 
 void handle_request(int sock);
 
