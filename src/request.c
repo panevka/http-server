@@ -82,7 +82,7 @@ int get_start_line(char *request, size_t request_len,
   }
 
   size_t proto_len = (size_t)(crlf - (sp2 + 1));
-  if (proto_len >= sizeof(proto_len)) {
+  if (proto_len >= sizeof(protocol)) {
     fprintf(stderr, "Protocol too long\n");
     return -1;
   }
