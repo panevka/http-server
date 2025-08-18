@@ -41,10 +41,6 @@
 int get_start_line(char *request, size_t request_len,
                    struct request_start_line *start_line) {
 
-  char method[sizeof(start_line->method)];
-  char uri[sizeof(start_line->uri)];
-  char protocol[sizeof(start_line->protocol)];
-
   // Find first delimiter (space)
   const char *sp1 = memchr(request, ' ', request_len);
   if (!sp1) {
@@ -52,12 +48,10 @@ int get_start_line(char *request, size_t request_len,
   }
 
   size_t method_len = (size_t)(sp1 - request);
-  if (method_len >= sizeof(method)) {
+  if (method_len >= sizeof(start_line->method)) {
     fprintf(stderr, "Method too long\n");
     return -1;
   }
-  memcpy(method, request, method_len);
-  method[method_len] = '\0';
 
   // Find second delimiter (space)
   const char *sp2 =
@@ -67,12 +61,10 @@ int get_start_line(char *request, size_t request_len,
   }
 
   size_t uri_len = (size_t)(sp2 - (sp1 + 1));
-  if (uri_len >= sizeof(uri)) {
+  if (uri_len >= sizeof(start_line->uri)) {
     fprintf(stderr, "URI too long\n");
     return -1;
   }
-  memcpy(uri, sp1 + 1, uri_len);
-  uri[uri_len] = '\0';
 
   // Find third delimiter (carriage return and line feed)
   const char *crlf =
@@ -82,20 +74,20 @@ int get_start_line(char *request, size_t request_len,
   }
 
   size_t proto_len = (size_t)(crlf - (sp2 + 1));
-  if (proto_len >= sizeof(protocol)) {
+  if (proto_len >= sizeof(start_line->protocol)) {
     fprintf(stderr, "Protocol too long\n");
     return -1;
   }
-  memcpy(protocol, sp2 + 1, proto_len);
-  protocol[proto_len] = '\0';
 
-  printf("Method: %s\n", method);
-  printf("URI: %s\n", uri);
-  printf("Protocol version: %s\n", protocol);
+  // Copy fields to received struct
+  memcpy(start_line->method, request, method_len);
+  start_line->method[method_len] = '\0';
 
-  snprintf(start_line->method, sizeof(start_line->method), "%s", method);
-  snprintf(start_line->uri, sizeof(start_line->uri), "%s", uri);
-  snprintf(start_line->protocol, sizeof(start_line->protocol), "%s", protocol);
+  memcpy(start_line->uri, sp1 + 1, uri_len);
+  start_line->uri[uri_len] = '\0';
+
+  memcpy(start_line->protocol, sp2 + 1, proto_len);
+  start_line->protocol[proto_len] = '\0';
 
   return 0;
 }
