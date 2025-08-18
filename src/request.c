@@ -17,8 +17,9 @@ int get_start_line(char *request, size_t request_len,
 
   // Find first delimiter (space)
   const char *sp1 = memchr(request, ' ', request_len);
-  if (!sp1)
+  if (!sp1) {
     return -1;
+  }
 
   size_t method_len = (size_t)(sp1 - request);
   if (method_len > MAX_METHOD_LENGTH)
@@ -28,8 +29,9 @@ int get_start_line(char *request, size_t request_len,
 
   // Find second delimiter (space)
   const char *sp2 = memchr(sp1 + 1, ' ', request_len - (sp1 + 1 - request));
-  if (!sp2)
+  if (!sp2) {
     return -1;
+  }
 
   size_t uri_len = sp2 - (sp1 + 1);
   if (uri_len > MAX_URI_LENGTH)
@@ -39,12 +41,14 @@ int get_start_line(char *request, size_t request_len,
 
   // Find third delimiter (carriage return and line feed)
   const char *crlf = memchr(sp2 + 1, '\r', request_len - (sp2 + 1 - request));
-  if (!crlf)
+  if (!crlf) {
     crlf = request + request_len;
+  }
 
   size_t proto_len = crlf - (sp2 + 1);
-  if (proto_len > MAX_PROTOCOL_LENGTH)
+  if (proto_len > MAX_PROTOCOL_LENGTH) {
     proto_len = MAX_PROTOCOL_LENGTH;
+  }
   memcpy(protocol, sp2 + 1, proto_len);
   protocol[proto_len] = '\0';
 
