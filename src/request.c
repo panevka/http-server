@@ -8,6 +8,36 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+/**
+ * @brief Parses the start line of an HTTP request.
+ *
+ * This function extracts the HTTP method, request URI, and protocol
+ * version from a raw HTTP request buffer. It copies each component
+ * into the provided `request_start_line` structure.
+ *
+ * The expected format of the start line is:
+ *     METHOD SP URI SP PROTOCOL CRLF
+ * For example:
+ *     "GET /index.html HTTP/1.1\r\n"
+ *
+ * @param request       Pointer to the raw HTTP request buffer (without null
+ * termination).
+ * @param request_len   Length of the request buffer in bytes.
+ * @param start_line    Pointer to a `struct request_start_line` where
+ *                      the parsed method, URI, and protocol version
+ *                      will be stored. Each field must have sufficient
+ *                      space to hold the corresponding string including
+ *                      the null terminator.
+ *
+ * @return int          Returns 0 on success, -1 on failure (e.g., if
+ *                      delimiters are missing, or fields exceed maximum
+ * length).
+ *
+ * @note The function ensures that the strings in `start_line` are
+ *       null-terminated. It returns -1 if the method, URI, or protocol
+ *       length is equal to or exceeds the size of their respective
+ *       fields in the `request_start_line` structure.
+ */
 int get_start_line(char *request, size_t request_len,
                    struct request_start_line *start_line) {
 
@@ -30,26 +60,31 @@ int get_start_line(char *request, size_t request_len,
   method[method_len] = '\0';
 
   // Find second delimiter (space)
-  const char *sp2 = memchr(sp1 + 1, ' ', request_len - (sp1 + 1 - request));
+  const char *sp2 =
+      memchr(sp1 + 1, ' ', request_len - (size_t)(sp1 + 1 - request));
   if (!sp2) {
     return -1;
   }
 
-  size_t uri_len = sp2 - (sp1 + 1);
-  if (uri_len > MAX_URI_LENGTH)
-    uri_len = MAX_URI_LENGTH;
+  size_t uri_len = (size_t)(sp2 - (sp1 + 1));
+  if (uri_len >= sizeof(uri)) {
+    fprintf(stderr, "URI too long\n");
+    return -1;
+  }
   memcpy(uri, sp1 + 1, uri_len);
   uri[uri_len] = '\0';
 
   // Find third delimiter (carriage return and line feed)
-  const char *crlf = memchr(sp2 + 1, '\r', request_len - (sp2 + 1 - request));
+  const char *crlf =
+      memchr(sp2 + 1, '\r', request_len - (size_t)(sp2 + 1 - request));
   if (!crlf) {
     crlf = request + request_len;
   }
 
-  size_t proto_len = crlf - (sp2 + 1);
-  if (proto_len > MAX_PROTOCOL_LENGTH) {
-    proto_len = MAX_PROTOCOL_LENGTH;
+  size_t proto_len = (size_t)(crlf - (sp2 + 1));
+  if (proto_len >= sizeof(proto_len)) {
+    fprintf(stderr, "Protocol too long\n");
+    return -1;
   }
   memcpy(protocol, sp2 + 1, proto_len);
   protocol[proto_len] = '\0';
