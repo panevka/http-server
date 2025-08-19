@@ -92,6 +92,15 @@ int get_start_line(char *request, size_t request_len,
   return 0;
 }
 
+int starts_with(const char *string, const char *prefix) {
+  while (*prefix) {
+    if (*prefix++ != *string++)
+      return 0;
+  }
+
+  return 1;
+}
+
 char *create_headers(size_t body_length) {
   const char headers[] = "HTTP/1.1 200 OK\r\n"
                          "Content-Type: text/html\r\n"
