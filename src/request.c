@@ -107,7 +107,7 @@ int sanitize_path(const char *safe_base_path, const char *unsafe_path,
   char temp[strlen(safe_base_path) + strlen(unsafe_path) + 1];
   char resolved_path[MAX_FILE_PATH_LENGTH + 1];
 
-  snprintf(temp, 1, "%s%s", safe_base_path, unsafe_path);
+  snprintf(temp, MAX_FILE_PATH_LENGTH + 1, "%s%s", safe_base_path, unsafe_path);
 
   if (realpath(temp, resolved_path) == NULL) {
     fprintf(stderr, "Received path could not be resolved: %s. %s \n", temp,
