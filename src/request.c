@@ -157,26 +157,10 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   FILE *fptr = NULL;
   off_t file_size;
 
-  char file_path[MAX_FILE_PATH_LENGTH + 1];
-  const char file_dir[] = "./static/";
-
-  // Build file path
-  int n = snprintf(file_path, sizeof(file_path), "%s%s", file_dir, path);
-
-  if (n < 0) {
-    fprintf(stderr, "Encoding error in snprintf\n");
-    return -1;
-  }
-
-  if ((size_t)n >= sizeof(file_path)) {
-    fprintf(stderr, "Path too long\n");
-    return -1;
-  }
-
   // Open file
-  fptr = fopen(file_path, "rb");
+  fptr = fopen(path, "rb");
   if (!fptr) {
-    fprintf(stderr, "Could not open file %s: %s\n", file_path, strerror(errno));
+    fprintf(stderr, "Could not open file %s: %s\n", path, strerror(errno));
     return -1;
   }
 
@@ -221,7 +205,12 @@ void handle_request(int sock) {
 
   long sent_bytes = 0;
   char response_buffer[MAX_FILE_SIZE];
-  ssize_t file_size = read_file(start_line.uri, response_buffer, MAX_FILE_SIZE);
+
+  char base_dir[] = "./static";
+  char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
+  sanitize_path(base_dir, start_line.uri, sanitized_path);
+
+  ssize_t file_size = read_file(sanitized_path, response_buffer, MAX_FILE_SIZE);
 
   const char *headers = create_headers(file_size);
   const size_t headers_size = strlen(headers);
