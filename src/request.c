@@ -115,7 +115,7 @@ int sanitize_path(const char *safe_base_path, const char *unsafe_path,
     return -1;
   }
 
-  if (starts_with(temp, safe_base_path)) {
+  if (starts_with(resolved_path, safe_base_path)) {
     memcpy(sanitized_path, resolved_path, MAX_FILE_PATH_LENGTH);
     return 0;
   }
@@ -206,9 +206,25 @@ void handle_request(int sock) {
   long sent_bytes = 0;
   char response_buffer[MAX_FILE_SIZE];
 
-  char base_dir[] = "./static";
+  char cwd[MAX_FILE_PATH_LENGTH + 1];
+  if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    fprintf(stderr, "Could not get current working directory: %s. \n",
+            strerror(errno));
+    shutdown(sock, SHUT_WR);
+    return;
+  }
+  printf("%s", cwd);
+
+  char base_dir[] = "/static";
+  char base_path[MAX_FILE_PATH_LENGTH + 1];
+  snprintf(base_path, MAX_FILE_PATH_LENGTH, "%s%s", cwd, base_dir);
+
   char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
-  sanitize_path(base_dir, start_line.uri, sanitized_path);
+  int is_sanitized = sanitize_path(base_path, start_line.uri, sanitized_path);
+  if (is_sanitized != 0) {
+    shutdown(sock, SHUT_WR);
+    return;
+  }
 
   ssize_t file_size = read_file(sanitized_path, response_buffer, MAX_FILE_SIZE);
 
