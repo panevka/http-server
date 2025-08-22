@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-Wall, -Wextra, -Wunused-variable, -Wpedantic, -Wshadow, -Wunused, -Wconversion, -Wsign-conversion, -Wnull-dereference, -Wdouble-promotion, -Wformat=2, -Wformat-security]
+  Add: [-I./include ,-Wall, -Wextra, -Wunused-variable, -Wpedantic, -Wshadow, -Wunused, -Wconversion, -Wsign-conversion, -Wnull-dereference, -Wdouble-promotion, -Wformat=2, -Wformat-security]
