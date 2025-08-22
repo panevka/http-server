@@ -61,20 +61,6 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
   struct dirent *dir_entry;
   struct stat entry_info;
 
-  // char html_start[] = "<!DOCTYPE html>"
-  //                     "<html lang=\"en\">"
-  //                     "<head>"
-  //                     "<meta charset=\"UTF-8\">"
-  //                     "<meta name=\"viewport\" content=\"width=device-width,
-  //                     " "initial-scale=1.0\">"
-  //                     "<title>Listing</title>"
-  //                     "</head>"
-  //                     "<body>"
-  //                     "<ul>";
-  // char html_end[] = "</ul>"
-  //                   "</body>"
-  //                   "</html>";
-
   // Open directory that will have their contents searched
   scanned_directory = opendir(directory_path);
   if (scanned_directory == NULL) {
@@ -88,19 +74,6 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     perror_msg(MSG_ERROR, true, "Could not open file %s.", file_save_path);
     goto FAIL;
   }
-
-  // Write HTML start to a file
-  // int bytes_written = fprintf(fptr, "%s", html_start);
-  // if (bytes_written < 0) {
-  //   perror_msg(MSG_ERROR, true, "Could not write to a file %s.",
-  //              file_save_path);
-  //   goto FAIL;
-  // }
-  // if ((unsigned long)bytes_written != strlen(html_start)) {
-  //   perror_msg(MSG_ERROR, true, "Could not write all bytes to the file %s.",
-  //              file_save_path);
-  //   goto FAIL;
-  // }
 
   // Loop for fetching directory entries
   while (true) {
@@ -145,14 +118,6 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
       fprintf(output_file, "<li>%s/</li><br>", dir_entry->d_name);
     }
   }
-
-  // Write HTML file end
-  // bytes_written = fprintf(fptr, "%s", html_end);
-  // if (bytes_written < 0) {
-  //   perror_msg(MSG_ERROR, true, "Could not write to a file %s.",
-  //              file_save_path);
-  //   goto FAIL;
-  // }
 
 SUCCESS:
   fclose(output_file);
