@@ -1,10 +1,20 @@
-build:
-	gcc main.c src/request.c -o a.out
-build-debug:
-	gcc -g main.c src/request.c -o a.out
-run:
-	./a.out
-start:
-	make build && make run
-start-debug:
-	make build-debug && make run
+CC = gcc
+CFLAGS = -I./include -Wall -g
+SRC = $(wildcard src/*.c)
+OBJ = $(patsubst src/%.c, build/%.o, $(SRC))
+TARGET = a.out
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CC) $(OBJ) -o $@
+
+build/%.o: src/%.c
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf build $(TARGET)
+
+run: $(TARGET)
+	./$(TARGET)
