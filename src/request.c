@@ -51,9 +51,17 @@ perror_msg(msg_type_t type, bool with_errno, const char *fmt, ...) {
   fprintf(stderr, "\n");
 }
 
-// directory_path should NOT end with "/", without this it can cause undefined
-// behaviour
-// both strings should be null-terminated
+/**
+ * Writes the contents of a directory into an HTML file.
+ *
+ * Scans `directory_path` and saves entries into `file_save_path`
+ * as an HTML list (<li>...</li>). Regular files are written as
+ * "name", directories as "name/".
+ *
+ * @param directory_path Path to the directory to scan.
+ * @param file_save_path Path to the HTML file to write.
+ * @return 0 on success, -1 on failure.
+ */
 int write_dir_entries_html(char *directory_path, const char *file_save_path) {
 
   DIR *scanned_directory = NULL;
