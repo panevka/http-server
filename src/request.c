@@ -1,4 +1,5 @@
 #include "request.h"
+#include <dirent.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -7,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -47,6 +49,124 @@ perror_msg(msg_type_t type, bool with_errno, const char *fmt, ...) {
   }
 
   fprintf(stderr, "\n");
+}
+
+// directory_path should NOT end with "/", without this it can cause undefined
+// behaviour
+// both strings should be null-terminated
+int write_dir_entries_html(char *directory_path, const char *file_save_path) {
+
+  DIR *scanned_directory = NULL;
+  FILE *output_file = NULL;
+  struct dirent *dir_entry;
+  struct stat entry_info;
+
+  // char html_start[] = "<!DOCTYPE html>"
+  //                     "<html lang=\"en\">"
+  //                     "<head>"
+  //                     "<meta charset=\"UTF-8\">"
+  //                     "<meta name=\"viewport\" content=\"width=device-width,
+  //                     " "initial-scale=1.0\">"
+  //                     "<title>Listing</title>"
+  //                     "</head>"
+  //                     "<body>"
+  //                     "<ul>";
+  // char html_end[] = "</ul>"
+  //                   "</body>"
+  //                   "</html>";
+
+  // Open directory that will have their contents searched
+  scanned_directory = opendir(directory_path);
+  if (scanned_directory == NULL) {
+    perror_msg(MSG_ERROR, true, "Could not open directory %s.", directory_path);
+    goto FAIL;
+  }
+
+  // Open file where the content list will be saved
+  output_file = fopen(file_save_path, "w");
+  if (output_file == NULL) {
+    perror_msg(MSG_ERROR, true, "Could not open file %s.", file_save_path);
+    goto FAIL;
+  }
+
+  // Write HTML start to a file
+  // int bytes_written = fprintf(fptr, "%s", html_start);
+  // if (bytes_written < 0) {
+  //   perror_msg(MSG_ERROR, true, "Could not write to a file %s.",
+  //              file_save_path);
+  //   goto FAIL;
+  // }
+  // if ((unsigned long)bytes_written != strlen(html_start)) {
+  //   perror_msg(MSG_ERROR, true, "Could not write all bytes to the file %s.",
+  //              file_save_path);
+  //   goto FAIL;
+  // }
+
+  // Loop for fetching directory entries
+  while (true) {
+
+    // Fetch directory entry
+    errno = 0;
+    dir_entry = readdir(scanned_directory);
+    if (errno != 0) {
+      perror_msg(MSG_ERROR, true, "Fetching directory entry failed.");
+      goto FAIL;
+    }
+    if (dir_entry == NULL) {
+      goto SUCCESS;
+    }
+
+    // Concatenate directory path with entry name
+    char entry_path[MAX_FILE_PATH_LENGTH + 1];
+    int written = snprintf(entry_path, sizeof(entry_path), "%s/%s",
+                           directory_path, dir_entry->d_name);
+    if (written < 0) {
+      perror_msg(MSG_ERROR, true, "Could not write to entry path buffer.");
+      goto FAIL;
+    }
+    if ((size_t)written >= sizeof(entry_path)) {
+      perror_msg(MSG_ERROR, true,
+                 "Could not write all data to entry path buffer.");
+      goto FAIL;
+    }
+
+    // Get info about directory entry
+    if (stat(entry_path, &entry_info) != 0) {
+      perror_msg(MSG_ERROR, true,
+                 "Could not obtain information about directory entry: %s.",
+                 entry_path);
+      goto FAIL;
+    }
+
+    // Write entry to an HTML file
+    if (S_ISREG(entry_info.st_mode)) {
+      fprintf(output_file, "<li>%s</li><br>", dir_entry->d_name);
+    } else if (S_ISDIR(entry_info.st_mode)) {
+      fprintf(output_file, "<li>%s/</li><br>", dir_entry->d_name);
+    }
+  }
+
+  // Write HTML file end
+  // bytes_written = fprintf(fptr, "%s", html_end);
+  // if (bytes_written < 0) {
+  //   perror_msg(MSG_ERROR, true, "Could not write to a file %s.",
+  //              file_save_path);
+  //   goto FAIL;
+  // }
+
+SUCCESS:
+  fclose(output_file);
+  closedir(scanned_directory);
+  return 0;
+
+FAIL:
+  if (output_file) {
+    fclose(output_file);
+  }
+  if (scanned_directory) {
+    closedir(scanned_directory);
+  }
+  return -1;
 }
 
 /**
@@ -234,6 +354,9 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
 }
 
 void handle_request(int sock) {
+  write_dir_entries_html("/home/shef/dev/projects/http-server/static",
+                         "/home/shef/dev/projects/http-server/temp/index.html");
+
   char buffer[MAX_REQUEST_SIZE + 1];
   ssize_t received_size = read(sock, buffer, sizeof(buffer));
   if (received_size == -1) {
