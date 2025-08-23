@@ -19,6 +19,7 @@ int main(void) {
 
   if ((socket_fd = create_and_bind(PORT)) == -1) {
     log_msg(MSG_ERROR, true, "failed to create and bind socket.");
+    return EXIT_FAILURE;
   }
 
   if (listen(socket_fd, LISTEN_BACKLOG) == -1) {
@@ -27,11 +28,6 @@ int main(void) {
   }
 
   log_msg(MSG_INFO, false, "server: waiting for connections...");
-
-  if (socket_fd == -1) {
-    log_msg(MSG_ERROR, true, "socket initalization failed");
-    exit(1);
-  }
 
   while (1) { // main accept() loop
     addr_size = sizeof new_addr;
