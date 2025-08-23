@@ -4,11 +4,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define LISTEN_BACKLOG 10
-#define PORT "3000"
 #define PROTOCOL_NAME "tcp"
 
-int initialize_socket(void) {
+int create_and_bind(char *port) {
 
   int sock;
   struct addrinfo hints, *res, *p;
@@ -21,7 +19,7 @@ int initialize_socket(void) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE; // fill ip automatically
 
-  if ((rv = getaddrinfo(NULL, PORT, &hints, &res)) != 0) {
+  if ((rv = getaddrinfo(NULL, port, &hints, &res)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
     return -1;
   }
@@ -52,13 +50,6 @@ int initialize_socket(void) {
     fprintf(stderr, "server: failed to bind\n");
     return -1;
   }
-
-  if (listen(sock, LISTEN_BACKLOG) == -1) {
-    perror("listen");
-    return -1;
-  }
-
-  printf("server: waiting for connections...\n");
 
   return sock;
 }

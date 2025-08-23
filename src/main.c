@@ -1,5 +1,6 @@
 #include "request.h"
 #include "socket.h"
+#include "utils.h"
 #include <netdb.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -9,12 +10,25 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#define LISTEN_BACKLOG 10
+#define PORT "3000"
+
 int main(void) {
   int socket_fd, new_socket;
   struct sockaddr_storage new_addr;
   socklen_t addr_size;
 
-  socket_fd = initialize_socket();
+  if ((socket_fd = create_and_bind(PORT)) == -1) {
+    perror_msg(MSG_ERROR, true, "Failed to create and bind socket.");
+  }
+
+  if (listen(socket_fd, LISTEN_BACKLOG) == -1) {
+    perror_msg(MSG_ERROR, true, "Failed to begin listening on the socket.");
+    return EXIT_FAILURE;
+  }
+
+  printf("server: waiting for connections...\n");
+
   if (socket_fd == -1) {
     perror("socket initalization failed");
     exit(1);

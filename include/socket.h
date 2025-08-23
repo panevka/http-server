@@ -1,6 +1,6 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
-int initialize_socket(void);
+int create_and_bind(char *port);
 
 #endif
