@@ -18,11 +18,11 @@ int main(void) {
   socklen_t addr_size;
 
   if ((socket_fd = create_and_bind(PORT)) == -1) {
-    log_msg(MSG_ERROR, true, "Failed to create and bind socket.");
+    log_msg(MSG_ERROR, true, "failed to create and bind socket.");
   }
 
   if (listen(socket_fd, LISTEN_BACKLOG) == -1) {
-    log_msg(MSG_ERROR, true, "Failed to begin listening on the socket.");
+    log_msg(MSG_ERROR, true, "failed to begin listening on the socket.");
     return EXIT_FAILURE;
   }
 

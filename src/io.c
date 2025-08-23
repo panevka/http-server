@@ -74,14 +74,14 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
   // Open directory that will have their contents searched
   scanned_directory = opendir(directory_path);
   if (scanned_directory == NULL) {
-    log_msg(MSG_ERROR, true, "Could not open directory %s.", directory_path);
+    log_msg(MSG_ERROR, true, "could not open directory %s.", directory_path);
     goto FAIL;
   }
 
   // Open file where the content list will be saved
   output_file = fopen(file_save_path, "w");
   if (output_file == NULL) {
-    log_msg(MSG_ERROR, true, "Could not open file %s.", file_save_path);
+    log_msg(MSG_ERROR, true, "could not open file %s.", file_save_path);
     goto FAIL;
   }
 
@@ -92,7 +92,7 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     errno = 0;
     dir_entry = readdir(scanned_directory);
     if (errno != 0) {
-      log_msg(MSG_ERROR, true, "Fetching directory entry failed.");
+      log_msg(MSG_ERROR, true, "fetching directory entry failed.");
       goto FAIL;
     }
     if (dir_entry == NULL) {
@@ -104,12 +104,12 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     int written = snprintf(entry_path, sizeof(entry_path), "%s/%s",
                            directory_path, dir_entry->d_name);
     if (written < 0) {
-      log_msg(MSG_ERROR, true, "Could not write to entry path buffer.");
+      log_msg(MSG_ERROR, true, "could not write to entry path buffer.");
       goto FAIL;
     }
     if ((size_t)written >= sizeof(entry_path)) {
       log_msg(MSG_ERROR, true,
-              "Could not write all data to entry path buffer.");
+              "could not write all data to entry path buffer.");
       goto FAIL;
     }
 
