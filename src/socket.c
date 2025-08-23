@@ -1,5 +1,5 @@
+#include "logging.h"
 #include <netdb.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -18,24 +18,24 @@ int create_and_bind(char *port) {
   hints.ai_flags = AI_PASSIVE; // fill ip automatically
 
   if ((rv = getaddrinfo(NULL, port, &hints, &res)) != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    log_msg(MSG_ERROR, false, "getaddrinfo: %s\n", gai_strerror(rv));
     return -1;
   }
 
   for (p = res; p != NULL; p = p->ai_next) {
     if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-      perror("server: socket");
+      log_msg(MSG_ERROR, true, "socket");
       continue;
     }
 
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-      perror("setsockopt");
+      log_msg(MSG_ERROR, true, "setsockopt failed");
       return -1;
     }
 
     if (bind(sock, p->ai_addr, p->ai_addrlen) == -1) {
       close(sock);
-      perror("server: bind");
+      log_msg(MSG_ERROR, true, "server bind failed");
       continue;
     }
 

@@ -1,5 +1,6 @@
 #include "request.h"
 #include "io.h"
+#include "logging.h"
 #include "utils.h"
 #include <dirent.h>
 #include <errno.h>
@@ -66,7 +67,7 @@ int get_start_line(char *request, size_t request_len,
 
   size_t method_len = (size_t)(sp1 - request);
   if (method_len >= sizeof(start_line->method)) {
-    fprintf(stderr, "Method too long\n");
+    log_msg(MSG_ERROR, false, "method too long");
     return -1;
   }
 
@@ -79,7 +80,7 @@ int get_start_line(char *request, size_t request_len,
 
   size_t uri_len = (size_t)(sp2 - (sp1 + 1));
   if (uri_len >= sizeof(start_line->uri)) {
-    fprintf(stderr, "URI too long\n");
+    log_msg(MSG_ERROR, false, "URI too long");
     return -1;
   }
 
@@ -92,7 +93,7 @@ int get_start_line(char *request, size_t request_len,
 
   size_t proto_len = (size_t)(crlf - (sp2 + 1));
   if (proto_len >= sizeof(start_line->protocol)) {
-    fprintf(stderr, "Protocol too long\n");
+    log_msg(MSG_ERROR, false, "protocol too long");
     return -1;
   }
 
@@ -184,7 +185,7 @@ void handle_request(int sock) {
   while (1) {
     sent_bytes += send(sock, shared_buffer, full_size, 0);
     if (sent_bytes == -1) {
-      perror("send");
+      log_msg(MSG_ERROR, true, "send has failed");
       break;
     }
     if (sent_bytes == (full_size))

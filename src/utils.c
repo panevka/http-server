@@ -1,5 +1,5 @@
 #include "utils.h"
-#include <errno.h>
+#include "logging.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -24,8 +24,7 @@ int sanitize_path(const char *safe_base_path, const char *unsafe_path,
   snprintf(temp, MAX_FILE_PATH_LENGTH + 1, "%s%s", safe_base_path, unsafe_path);
 
   if (realpath(temp, resolved_path) == NULL) {
-    fprintf(stderr, "Received path could not be resolved: %s. %s \n", temp,
-            strerror(errno));
+    log_msg(MSG_ERROR, true, "Received path could not be resolved: %s.", temp);
     return -1;
   }
 

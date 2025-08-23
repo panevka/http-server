@@ -1,12 +1,10 @@
 #include "logging.h"
 #include "request.h"
 #include "socket.h"
-#include "utils.h"
 #include <netdb.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -28,10 +26,10 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  printf("server: waiting for connections...\n");
+  log_msg(MSG_INFO, false, "server: waiting for connections...");
 
   if (socket_fd == -1) {
-    perror("socket initalization failed");
+    log_msg(MSG_ERROR, true, "socket initalization failed");
     exit(1);
   }
 
@@ -39,7 +37,7 @@ int main(void) {
     addr_size = sizeof new_addr;
     new_socket = accept(socket_fd, (struct sockaddr *)&new_addr, &addr_size);
     if (new_socket == -1) {
-      perror("accept");
+      log_msg(MSG_ERROR, true, "accept failed");
       continue;
     }
 

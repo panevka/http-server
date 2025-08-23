@@ -10,7 +10,7 @@
 
 static void close_file(FILE *f) {
   if (f && fclose(f) != 0) {
-    perror("Warning: could not close the file");
+    log_msg(MSG_WARNING, false, "could not close the file");
   }
 }
 
@@ -21,19 +21,19 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   // Open file
   fptr = fopen(path, "rb");
   if (!fptr) {
-    fprintf(stderr, "Could not open file %s: %s\n", path, strerror(errno));
+    log_msg(MSG_ERROR, true, "could not open file %s", path);
     return -1;
   }
 
   // Determine file size
   if (fseeko(fptr, 0, SEEK_END) != 0) {
-    perror("Could not go to file end");
+    log_msg(MSG_ERROR, true, "could not go to file end %s", path);
     close_file(fptr);
     return -1;
   }
   file_size = ftello(fptr);
   if (file_size == -1) {
-    perror("Could not verify file size");
+    log_msg(MSG_ERROR, true, "could not verify file size %s", path);
     close_file(fptr);
     return -1;
   }
@@ -42,7 +42,7 @@ off_t read_file(const char *path, char *file_buffer, size_t len) {
   // Read into file buffer
   fread(file_buffer, 1, len, fptr);
   if (ferror(fptr)) {
-    perror("fread failed");
+    log_msg(MSG_ERROR, true, "fread has failed for file %s", path);
     close_file(fptr);
     return -1;
   }
