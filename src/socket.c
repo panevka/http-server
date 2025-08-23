@@ -4,8 +4,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define PROTOCOL_NAME "tcp"
-
 int create_and_bind(char *port) {
 
   int sock;
@@ -47,7 +45,6 @@ int create_and_bind(char *port) {
   freeaddrinfo(res);
 
   if (p == NULL) {
-    fprintf(stderr, "server: failed to bind\n");
     return -1;
   }
 
