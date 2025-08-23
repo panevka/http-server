@@ -1,5 +1,5 @@
 #include "io.h"
-#include "utils.h"
+#include "logging.h"
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -74,14 +74,14 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
   // Open directory that will have their contents searched
   scanned_directory = opendir(directory_path);
   if (scanned_directory == NULL) {
-    perror_msg(MSG_ERROR, true, "Could not open directory %s.", directory_path);
+    log_msg(MSG_ERROR, true, "Could not open directory %s.", directory_path);
     goto FAIL;
   }
 
   // Open file where the content list will be saved
   output_file = fopen(file_save_path, "w");
   if (output_file == NULL) {
-    perror_msg(MSG_ERROR, true, "Could not open file %s.", file_save_path);
+    log_msg(MSG_ERROR, true, "Could not open file %s.", file_save_path);
     goto FAIL;
   }
 
@@ -92,7 +92,7 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     errno = 0;
     dir_entry = readdir(scanned_directory);
     if (errno != 0) {
-      perror_msg(MSG_ERROR, true, "Fetching directory entry failed.");
+      log_msg(MSG_ERROR, true, "Fetching directory entry failed.");
       goto FAIL;
     }
     if (dir_entry == NULL) {
@@ -104,20 +104,20 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     int written = snprintf(entry_path, sizeof(entry_path), "%s/%s",
                            directory_path, dir_entry->d_name);
     if (written < 0) {
-      perror_msg(MSG_ERROR, true, "Could not write to entry path buffer.");
+      log_msg(MSG_ERROR, true, "Could not write to entry path buffer.");
       goto FAIL;
     }
     if ((size_t)written >= sizeof(entry_path)) {
-      perror_msg(MSG_ERROR, true,
-                 "Could not write all data to entry path buffer.");
+      log_msg(MSG_ERROR, true,
+              "Could not write all data to entry path buffer.");
       goto FAIL;
     }
 
     // Get info about directory entry
     if (stat(entry_path, &entry_info) != 0) {
-      perror_msg(MSG_ERROR, true,
-                 "Could not obtain information about directory entry: %s.",
-                 entry_path);
+      log_msg(MSG_ERROR, true,
+              "Could not obtain information about directory entry: %s.",
+              entry_path);
       goto FAIL;
     }
 
