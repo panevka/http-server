@@ -25,6 +25,8 @@ log_msg(msg_type_t type, bool with_errno, const char *fmt, ...) {
   }
 
   // Print severity prefix
+  if (type == MSG_INFO)
+    fprintf(stdout, "Info: ");
   if (type == MSG_WARNING)
     fprintf(stderr, "Warning: ");
   else if (type == MSG_ERROR)
