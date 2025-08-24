@@ -134,19 +134,60 @@ char *create_headers(size_t body_length) {
   return headers_buffer;
 }
 
+typedef enum {
+  REQ_ERROR = -1,
+  REQ_OVERFLOW = -2 // socket contains more request data than buffer size
+} request_status;
+
+ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
+  size_t bytes_read = 0;
+  ssize_t chunk = 0;
+
+  while (bytes_read < buffer_size) {
+    chunk = recv(sock, buffer + bytes_read, buffer_size - bytes_read, 0);
+
+    if (chunk < 0) {
+      return REQ_ERROR;
+    }
+
+    if (chunk == 0) {
+      break;
+    }
+
+    bytes_read += (size_t)chunk;
+  }
+
+  if (recv(sock, (char[1]){0}, 1, MSG_PEEK) > 0) {
+    return REQ_OVERFLOW;
+  }
+
+  return (ssize_t)bytes_read;
+}
+
 void handle_request(int sock) {
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
   char buffer[MAX_REQUEST_SIZE + 1];
-  ssize_t received_size = read(sock, buffer, sizeof(buffer));
-  if (received_size == -1) {
+  ssize_t read_result;
+
+  read_result = read_request(sock, buffer, sizeof(buffer) - 1);
+
+  if (read_result < 0) {
+
+    if (read_result == REQ_ERROR)
+      log_msg(MSG_ERROR, true, "error occurred while reading request data");
+    else if (read_result == REQ_OVERFLOW)
+      log_msg(MSG_WARNING, false, "could not handle request, request too big");
+
+    shutdown(sock, SHUT_WR);
     return;
-  }
-  buffer[received_size] = '\0';
+  };
+
+  buffer[sizeof(buffer) - 1] = '\0';
 
   struct request_start_line start_line;
-  get_start_line(buffer, received_size, &start_line);
+  get_start_line(buffer, read_result, &start_line);
 
   long sent_bytes = 0;
   char response_buffer[MAX_FILE_SIZE];
