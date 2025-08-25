@@ -197,8 +197,8 @@ void handle_request(int sock) {
 
   char cwd[MAX_FILE_PATH_LENGTH + 1];
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
-    fprintf(stderr, "Could not get current working directory: %s. \n",
-            strerror(errno));
+    log_msg(MSG_ERROR, true, "Could not get current working directory. ");
+
     shutdown(sock, SHUT_WR);
     return;
   }
