@@ -172,17 +172,22 @@ void handle_request(int sock) {
   char buffer[MAX_REQUEST_SIZE + 1];
   ssize_t read_result;
 
+  errno = 0;
   read_result = read_request(sock, buffer, sizeof(buffer) - 1);
 
   if (read_result < 0) {
 
-    if (read_result == REQ_ERROR)
-      log_msg(MSG_ERROR, true, "error occurred while reading request data");
-    else if (read_result == REQ_OVERFLOW)
+    if (read_result == REQ_ERROR) {
+      if (errno == EWOULDBLOCK || errno == EAGAIN) {
+        log_msg(MSG_WARNING, false, "request timeout");
+      } else {
+        log_msg(MSG_ERROR, true, "error occurred while reading request data");
+        shutdown(sock, SHUT_WR);
+        return;
+      }
+    } else if (read_result == REQ_OVERFLOW) {
       log_msg(MSG_WARNING, false, "could not handle request, request too big");
-
-    shutdown(sock, SHUT_WR);
-    return;
+    }
   };
 
   buffer[sizeof(buffer) - 1] = '\0';
@@ -191,7 +196,6 @@ void handle_request(int sock) {
   get_start_line(buffer, read_result, &start_line);
 
   long sent_bytes = 0;
-  char response_buffer[MAX_FILE_SIZE];
 
   char cwd[MAX_FILE_PATH_LENGTH + 1];
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
@@ -213,25 +217,40 @@ void handle_request(int sock) {
     return;
   }
 
-  ssize_t file_size = read_file(sanitized_path, response_buffer, MAX_FILE_SIZE);
+  int file_fd = get_file_fd(sanitized_path);
+  if (file_fd < 0) {
+    shutdown(sock, SHUT_WR);
+    return;
+  }
 
-  const char *headers = create_headers(file_size);
+  struct stat st;
+
+  if (fstat(file_fd, &st) == -1) {
+    log_msg(MSG_ERROR, true, "fstat has failed");
+  }
+
+  const char *headers = create_headers(st.st_size);
   const size_t headers_size = strlen(headers);
 
-  const size_t full_size = headers_size + file_size;
-  char *const shared_buffer = malloc(full_size + 1);
-
-  strcpy(shared_buffer, headers);
-  strncat(shared_buffer, response_buffer, full_size + 1);
-
   while (1) {
-    sent_bytes += send(sock, shared_buffer, full_size, 0);
+    log_msg(MSG_INFO, false, "sending");
+    sent_bytes += send(sock, headers, headers_size, 0);
     if (sent_bytes == -1) {
       log_msg(MSG_ERROR, true, "send has failed");
       break;
     }
-    if (sent_bytes == (full_size))
+    if (sent_bytes == (headers_size))
       break;
   }
+
+  ssize_t transferred = sendfile(sock, file_fd, NULL, st.st_size);
+  if (transferred < 0) {
+    log_msg(MSG_ERROR, true, "transfer failed");
+  }
+
+  if (close(file_fd) != 0) {
+    log_msg(MSG_WARNING, true, "closing file descriptor has failed");
+  };
+
   shutdown(sock, SHUT_WR);
 }
