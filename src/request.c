@@ -111,6 +111,35 @@ int get_start_line(char *request, size_t request_len,
   return 0;
 }
 
+/**
+ * @brief Formats an HTTP response status line.
+ *
+ * Writes a status line in the format "protocol status_code reason_phrase"
+ * into the provided buffer. All string parameters must be null-terminated.
+ *
+ * @param status_line       Buffer to write the status line into.
+ * @param status_line_len   Size of the buffer in bytes.
+ * @param protocol          Null-terminated HTTP protocol version (e.g.,
+ * "HTTP/1.1").
+ * @param status_code       Null-terminated HTTP status code (e.g., "200").
+ * @param reason_phrase     Null-terminated reason phrase (e.g., "OK").
+ *
+ * @return Number of characters written (excluding null terminator), or -1 on
+ * error.
+ */
+int create_response_status_line(char *status_line, size_t status_line_len,
+                                char *protocol, char *status_code,
+                                char *reason_phrase) {
+  int bytes_written = snprintf(status_line, status_line_len, "%s %s %s",
+                               protocol, status_code, reason_phrase);
+
+  if (bytes_written < 0) {
+    return -1;
+  }
+
+  return bytes_written;
+}
+
 char *create_response_head(size_t body_length) {
   const char headers[] = "HTTP/1.1 200 OK\r\n"
                          "Content-Type: text/html\r\n"
