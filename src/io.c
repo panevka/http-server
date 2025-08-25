@@ -2,11 +2,13 @@
 #include "logging.h"
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 static void close_file(FILE *f) {
   if (f && fclose(f) != 0) {
@@ -142,4 +144,15 @@ FAIL:
     closedir(scanned_directory);
   }
   return -1;
+}
+
+int get_file_fd(char *path) {
+
+  int fd = open(path, O_RDONLY);
+
+  if (fd == -1) {
+    return -1;
+  }
+
+  return fd;
 }

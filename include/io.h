@@ -11,4 +11,6 @@ off_t read_file(const char *path, char *file_buffer, size_t len);
 
 int write_dir_entries_html(char *directory_path, const char *file_save_path);
 
+int get_file_fd(char *path);
+
 #endif
