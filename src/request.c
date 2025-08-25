@@ -165,10 +165,15 @@ ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
   return (ssize_t)bytes_read;
 }
 
-struct response {
+struct response_status_line {
   char *protocol;
-  short status_code;
+  char *status_code;
   char *reason_phrase;
+};
+
+struct response {
+  struct response_status_line status_line;
+
   char *headers;
 
   struct {
@@ -178,11 +183,12 @@ struct response {
   } body;
 };
 
-void set_response_status_line(struct response *r, char *protocol,
-                              short status_code, char *reason_phrase) {
-  r->protocol = protocol;
-  r->status_code = status_code;
-  r->reason_phrase = reason_phrase;
+void set_response_status_line(struct response_status_line *status_line,
+                              char *protocol, char *status_code,
+                              char *reason_phrase) {
+  status_line->protocol = protocol;
+  status_line->status_code = status_code;
+  status_line->reason_phrase = reason_phrase;
 }
 
 void set_response_headers(struct response *r, char *headers) {
