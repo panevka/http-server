@@ -165,6 +165,35 @@ ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
   return (ssize_t)bytes_read;
 }
 
+struct response {
+  char *protocol;
+  short status_code;
+  char *reason_phrase;
+  char *headers;
+
+  struct {
+    int fd;
+    off_t offset;
+    size_t length;
+  } body;
+};
+
+void set_response_status_line(struct response *r, char *protocol,
+                              short status_code, char *reason_phrase) {
+  r->protocol = protocol;
+  r->status_code = status_code;
+  r->reason_phrase = reason_phrase;
+}
+
+void set_response_headers(struct response *r, char *headers) {
+  r->headers = headers;
+}
+
+void set_response_body(struct response *r, int fd, off_t offset, size_t len) {
+  r->body.fd = fd;
+  r->body.offset = offset;
+  r->body.length = len;
+}
 void handle_request(int sock) {
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
