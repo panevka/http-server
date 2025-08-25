@@ -172,23 +172,21 @@ void handle_request(int sock) {
   char buffer[MAX_REQUEST_SIZE + 1];
   ssize_t read_result;
 
-  errno = 0;
   read_result = read_request(sock, buffer, sizeof(buffer) - 1);
 
-  if (read_result < 0) {
+  if (read_result == REQ_ERROR) {
 
-    if (read_result == REQ_ERROR) {
-      if (errno == EWOULDBLOCK || errno == EAGAIN) {
-        log_msg(MSG_WARNING, false, "request timeout");
-      } else {
-        log_msg(MSG_ERROR, true, "error occurred while reading request data");
-        shutdown(sock, SHUT_WR);
-        return;
-      }
-    } else if (read_result == REQ_OVERFLOW) {
-      log_msg(MSG_WARNING, false, "could not handle request, request too big");
+    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+      log_msg(MSG_ERROR, true, "error occurred while reading request data");
+      shutdown(sock, SHUT_WR);
+      return;
     }
-  };
+
+    log_msg(MSG_WARNING, false, "request timeout");
+
+  } else if (read_result == REQ_OVERFLOW) {
+    log_msg(MSG_WARNING, false, "could not handle request, request too big");
+  }
 
   buffer[sizeof(buffer) - 1] = '\0';
 
