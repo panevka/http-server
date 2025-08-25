@@ -111,7 +111,7 @@ int get_start_line(char *request, size_t request_len,
   return 0;
 }
 
-char *create_headers(size_t body_length) {
+char *create_response_head(size_t body_length) {
   const char headers[] = "HTTP/1.1 200 OK\r\n"
                          "Content-Type: text/html\r\n"
                          "Content-Length: %lu\r\n"
@@ -252,7 +252,7 @@ void handle_request(int sock) {
     log_msg(MSG_ERROR, true, "fstat has failed");
   }
 
-  const char *headers = create_headers(st.st_size);
+  const char *headers = create_response_head(st.st_size);
   const size_t headers_size = strlen(headers);
 
   while (1) {
