@@ -178,8 +178,7 @@ void handle_request(int sock) {
 
     if (errno != EWOULDBLOCK && errno != EAGAIN) {
       log_msg(MSG_ERROR, true, "error occurred while reading request data");
-      shutdown(sock, SHUT_WR);
-      return;
+      goto END_CONNECTION;
     }
 
     log_msg(MSG_WARNING, false, "request timeout");
@@ -199,8 +198,7 @@ void handle_request(int sock) {
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     log_msg(MSG_ERROR, true, "Could not get current working directory. ");
 
-    shutdown(sock, SHUT_WR);
-    return;
+    goto END_CONNECTION;
   }
   printf("%s", cwd);
 
@@ -211,14 +209,12 @@ void handle_request(int sock) {
   char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
   int is_sanitized = sanitize_path(base_path, start_line.uri, sanitized_path);
   if (is_sanitized != 0) {
-    shutdown(sock, SHUT_WR);
-    return;
+    goto END_CONNECTION;
   }
 
   int file_fd = get_file_fd(sanitized_path);
   if (file_fd < 0) {
-    shutdown(sock, SHUT_WR);
-    return;
+    goto END_CONNECTION;
   }
 
   struct stat st;
@@ -250,5 +246,7 @@ void handle_request(int sock) {
     log_msg(MSG_WARNING, true, "closing file descriptor has failed");
   };
 
+END_CONNECTION:
   shutdown(sock, SHUT_WR);
+  return;
 }
