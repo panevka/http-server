@@ -229,6 +229,49 @@ void set_response_body(struct response *r, int fd, off_t offset, size_t len) {
   r->body.offset = offset;
   r->body.length = len;
 }
+
+int prepare_response(struct response *response,
+                     struct request_start_line *start_line) {
+
+  char base_dir[] = "/static";
+  char base_path[MAX_FILE_PATH_LENGTH + 1];
+  char cwd[MAX_FILE_PATH_LENGTH + 1];
+
+  if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    log_msg(MSG_ERROR, true, "Could not get current working directory. ");
+    return -1;
+  }
+  snprintf(base_path, MAX_FILE_PATH_LENGTH, "%s%s", cwd, base_dir);
+
+  char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
+  int is_sanitized = sanitize_path(base_path, start_line->uri, sanitized_path);
+  if (is_sanitized != 0) {
+    return -1;
+  }
+
+  int file_fd = get_file_fd(sanitized_path);
+  if (file_fd < 0) {
+    return -1;
+  }
+
+  struct stat st;
+  if (fstat(file_fd, &st) == -1) {
+    log_msg(MSG_ERROR, true, "fstat has failed");
+  }
+
+  char *protocol = "HTTP/1.1";
+  char *status_code = "200";
+  char *reason_phrase = "OK";
+  char *headers = create_response_head(st.st_size);
+
+  set_response_status_line(&(response->status_line), protocol, status_code,
+                           reason_phrase);
+  set_response_headers(response, headers);
+  set_response_body(response, file_fd, 0, st.st_size);
+
+  return 0;
+}
+
 void handle_request(int sock) {
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
