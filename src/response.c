@@ -33,41 +33,12 @@ char *create_response_headers(size_t body_length) {
 
   return headers_buffer;
 }
-/**
- * @brief Formats an HTTP response status line.
- *
- * Writes a status line in the format "protocol status_code reason_phrase"
- * into the provided buffer. All string parameters must be null-terminated.
- *
- * @param status_line       Buffer to write the status line into.
- * @param status_line_len   Size of the buffer in bytes.
- * @param protocol          Null-terminated HTTP protocol version (e.g.,
- * "HTTP/1.1").
- * @param status_code       Null-terminated HTTP status code (e.g., "200").
- * @param reason_phrase     Null-terminated reason phrase (e.g., "OK").
- *
- * @return Number of characters written (excluding null terminator), or -1 on
- * error.
- */
-int create_response_status_line(char *status_line, size_t status_line_len,
-                                char *protocol, char *status_code,
-                                char *reason_phrase) {
-  int bytes_written = snprintf(status_line, status_line_len, "%s %s %s",
-                               protocol, status_code, reason_phrase);
 
-  if (bytes_written < 0) {
-    return -1;
-  }
-
-  return bytes_written;
-}
-
-void set_response_status_line(struct response_status_line *status_line,
-                              char *protocol, char *status_code,
-                              char *reason_phrase) {
-  status_line->protocol = protocol;
-  status_line->status_code = status_code;
-  status_line->reason_phrase = reason_phrase;
+void set_response_status_line(struct response *r, char *protocol,
+                              char *status_code, char *reason_phrase) {
+  r->status_line.protocol = protocol;
+  r->status_line.status_code = status_code;
+  r->status_line.reason_phrase = reason_phrase;
 }
 
 void set_response_headers(struct response *r, char *headers) {
@@ -121,8 +92,7 @@ int prepare_response(struct response *response,
   char *reason_phrase = "OK";
   char *headers = create_response_headers(st.st_size);
 
-  set_response_status_line(&(response->status_line), protocol, status_code,
-                           reason_phrase);
+  set_response_status_line(response, protocol, status_code, reason_phrase);
   set_response_headers(response, headers);
   set_response_body(response, file_fd, 0, st.st_size);
 
