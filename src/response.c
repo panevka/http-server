@@ -11,27 +11,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-char *create_response_headers(size_t body_length) {
+int create_response_headers(char *headers_buf, size_t buf_len,
+                            size_t body_length) {
   const char headers[] = "Content-Type: text/html\r\n"
                          "Content-Length: %lu\r\n"
                          "Connection: close\r\n\r\n";
+  int bytes_written = snprintf(headers_buf, buf_len, headers, body_length);
 
-  int needed = snprintf(NULL, 0, headers, body_length);
-
-  if (needed < 0)
-    return NULL;
-
-  size_t size = (size_t)needed + 1;
-
-  char *headers_buffer = malloc(size);
-  if (!headers_buffer)
-    return NULL;
-
-  if (snprintf(headers_buffer, size, headers, body_length) < 0) {
-    return NULL;
-  }
-
-  return headers_buffer;
+  return bytes_written;
 }
 
 void set_response_status_line(struct response *r, char *protocol,
@@ -111,7 +98,9 @@ int prepare_response(struct response *response,
   char *protocol = "HTTP/1.1";
   char *status_code = "200";
   char *reason_phrase = "OK";
-  char *headers = create_response_headers(st.st_size);
+  char headers[512];
+
+  create_response_headers(headers, sizeof(headers), st.st_size);
 
   set_response_status_line(response, protocol, status_code, reason_phrase);
   set_response_headers(response, headers);
