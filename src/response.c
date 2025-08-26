@@ -78,7 +78,7 @@ int prepare_response(struct response *response,
             cwd, base_dir);
     return -1;
   }
-  if (bytes_written > 0) {
+  if (bytes_written >= MAX_FILE_PATH_LENGTH) {
     log_msg(
         MSG_WARNING, false,
         "path containing cwd (%s) and base_dir (%s) had to be truncated: %s",
