@@ -278,6 +278,48 @@ int prepare_response(struct response *response,
   return 0;
 }
 
+void send_response(struct response *res, int sock) {
+
+  long sent_bytes = 0;
+
+  char status_line[512];
+  serialize_response_status_line(&(res->status_line), status_line,
+                                 sizeof(status_line));
+
+  const size_t headers_size = strlen(res->headers);
+
+  while (1) {
+    log_msg(MSG_INFO, false, "sending %s", status_line);
+    sent_bytes += send(sock, status_line, strlen(status_line), 0);
+    if (sent_bytes == -1) {
+      log_msg(MSG_ERROR, true, "send has failed");
+      break;
+    }
+    if (sent_bytes == strlen(status_line))
+      break;
+  };
+  sent_bytes = 0;
+
+  while (1) {
+    log_msg(MSG_INFO, false, "sending %s", res->headers);
+    sent_bytes += send(sock, res->headers, headers_size, 0);
+    if (sent_bytes == -1) {
+      log_msg(MSG_ERROR, true, "send has failed");
+      break;
+    }
+    if (sent_bytes == (headers_size))
+      break;
+  }
+
+  ssize_t transferred = sendfile(sock, res->body.fd, NULL, res->body.length);
+  if (transferred < 0) {
+    log_msg(MSG_ERROR, true, "transfer failed");
+  }
+
+  if (close(res->body.fd) != 0) {
+    log_msg(MSG_WARNING, true, "closing file descriptor has failed");
+  };
+}
 void handle_request(int sock) {
 
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
@@ -308,45 +350,8 @@ void handle_request(int sock) {
 
   struct response res;
   prepare_response(&res, &start_line);
-  long sent_bytes = 0;
 
-  char status_line[512];
-  serialize_response_status_line(&res.status_line, status_line,
-                                 sizeof(status_line));
-
-  const size_t headers_size = strlen(res.headers);
-
-  while (1) {
-    log_msg(MSG_INFO, false, "sending %s", status_line);
-    sent_bytes += send(sock, status_line, strlen(status_line), 0);
-    if (sent_bytes == -1) {
-      log_msg(MSG_ERROR, true, "send has failed");
-      break;
-    }
-    if (sent_bytes == strlen(status_line))
-      break;
-  };
-  sent_bytes = 0;
-
-  while (1) {
-    log_msg(MSG_INFO, false, "sending %s", res.headers);
-    sent_bytes += send(sock, res.headers, headers_size, 0);
-    if (sent_bytes == -1) {
-      log_msg(MSG_ERROR, true, "send has failed");
-      break;
-    }
-    if (sent_bytes == (headers_size))
-      break;
-  }
-
-  ssize_t transferred = sendfile(sock, res.body.fd, NULL, res.body.length);
-  if (transferred < 0) {
-    log_msg(MSG_ERROR, true, "transfer failed");
-  }
-
-  if (close(res.body.fd) != 0) {
-    log_msg(MSG_WARNING, true, "closing file descriptor has failed");
-  };
+  send_response(&res, sock);
 
 END_CONNECTION:
   shutdown(sock, SHUT_WR);
