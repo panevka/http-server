@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-char *create_response_head(size_t body_length) {
+char *create_response_headers(size_t body_length) {
   const char headers[] = "Content-Type: text/html\r\n"
                          "Content-Length: %lu\r\n"
                          "Connection: close\r\n\r\n";
@@ -119,7 +119,7 @@ int prepare_response(struct response *response,
   char *protocol = "HTTP/1.1";
   char *status_code = "200";
   char *reason_phrase = "OK";
-  char *headers = create_response_head(st.st_size);
+  char *headers = create_response_headers(st.st_size);
 
   set_response_status_line(&(response->status_line), protocol, status_code,
                            reason_phrase);
