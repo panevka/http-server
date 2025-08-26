@@ -47,14 +47,17 @@ int serialize_response_status_line(struct response_status_line *line, char *buf,
 
 int prepare_response(struct response *response,
                      struct request_start_line *start_line) {
-
+  int file_fd = -1;
   char base_dir[] = "/static";
   char base_path[MAX_FILE_PATH_LENGTH + 1];
   char cwd[MAX_FILE_PATH_LENGTH + 1];
+  char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
+
+  int rc = -1;
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     log_msg(MSG_ERROR, true, "Could not get current working directory. ");
-    return -1;
+    goto CLEANUP;
   }
 
   int bytes_written =
@@ -63,36 +66,35 @@ int prepare_response(struct response *response,
     log_msg(MSG_ERROR, true,
             "could not write cwd (%s) combined with base_dir (%s) to a buffer",
             cwd, base_dir);
-    return -1;
+    goto CLEANUP;
   }
   if (bytes_written >= MAX_FILE_PATH_LENGTH) {
     log_msg(
         MSG_WARNING, false,
         "path containing cwd (%s) and base_dir (%s) had to be truncated: %s",
         cwd, base_dir, base_path);
-    return -1;
+    goto CLEANUP;
   }
 
-  char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
   int is_sanitized = sanitize_path(base_path, start_line->uri, sanitized_path);
   if (is_sanitized != 0) {
     log_msg(MSG_WARNING, false, "could not properly sanitize path %s",
             base_path);
-    return -1;
+    goto CLEANUP;
   }
 
-  int file_fd = get_file_fd(sanitized_path);
+  file_fd = get_file_fd(sanitized_path);
   if (file_fd < 0) {
     log_msg(MSG_ERROR, true,
             "could not get file descriptor from received path %s",
             sanitized_path);
-    return -1;
+    goto CLEANUP;
   }
 
   struct stat st;
   if (fstat(file_fd, &st) == -1) {
     log_msg(MSG_ERROR, true, "fstat has failed");
-    return -1;
+    goto CLEANUP;
   }
 
   char *protocol = "HTTP/1.1";
@@ -104,18 +106,21 @@ int prepare_response(struct response *response,
       create_response_headers(headers, sizeof(headers), st.st_size);
   if (headers_size < 0) {
     log_msg(MSG_ERROR, true, "could not create headers");
-    return -1;
+    goto CLEANUP;
   }
   if (headers_size >= sizeof(headers)) {
     log_msg(MSG_WARNING, false, "headers had to be truncated");
-    return -1;
+    goto CLEANUP;
   }
 
   set_response_status_line(response, protocol, status_code, reason_phrase);
   set_response_headers(response, headers);
   set_response_body(response, file_fd, 0, st.st_size);
 
-  return 0;
+  rc = 0;
+
+CLEANUP:
+  return rc;
 }
 
 void send_response(struct response *res, int sock) {
