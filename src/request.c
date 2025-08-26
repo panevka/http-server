@@ -135,10 +135,12 @@ void handle_request(int sock) {
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
-  char buffer[MAX_REQUEST_SIZE + 1];
-  ssize_t read_result;
+  char request_buf[MAX_REQUEST_SIZE + 1];
+  struct response res;
+  struct request_start_line start_line;
 
-  read_result = read_request(sock, buffer, sizeof(buffer) - 1);
+  ssize_t read_result =
+      read_request(sock, request_buf, sizeof(request_buf) - 1);
 
   if (read_result == REQ_ERROR) {
 
@@ -153,12 +155,10 @@ void handle_request(int sock) {
     log_msg(MSG_WARNING, false, "could not handle request, request too big");
   }
 
-  buffer[sizeof(buffer) - 1] = '\0';
+  request_buf[sizeof(request_buf) - 1] = '\0';
 
-  struct request_start_line start_line;
-  get_start_line(buffer, read_result, &start_line);
+  get_start_line(request_buf, read_result, &start_line);
 
-  struct response res;
   prepare_response(&res, &start_line);
 
   send_response(&res, sock);
