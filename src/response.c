@@ -100,7 +100,16 @@ int prepare_response(struct response *response,
   char *reason_phrase = "OK";
   char headers[512];
 
-  create_response_headers(headers, sizeof(headers), st.st_size);
+  int headers_size =
+      create_response_headers(headers, sizeof(headers), st.st_size);
+  if (headers_size < 0) {
+    log_msg(MSG_ERROR, true, "could not create headers");
+    return -1;
+  }
+  if (headers_size >= sizeof(headers)) {
+    log_msg(MSG_WARNING, false, "headers had to be truncated");
+    return -1;
+  }
 
   set_response_status_line(response, protocol, status_code, reason_phrase);
   set_response_headers(response, headers);
