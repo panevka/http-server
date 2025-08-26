@@ -120,6 +120,9 @@ int prepare_response(struct response *response,
   rc = 0;
 
 CLEANUP:
+  if (rc != 0 && file_fd >= 0) {
+    close(file_fd);
+  }
   return rc;
 }
 
