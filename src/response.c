@@ -69,22 +69,43 @@ int prepare_response(struct response *response,
     log_msg(MSG_ERROR, true, "Could not get current working directory. ");
     return -1;
   }
-  snprintf(base_path, MAX_FILE_PATH_LENGTH, "%s%s", cwd, base_dir);
+
+  int bytes_written =
+      snprintf(base_path, MAX_FILE_PATH_LENGTH, "%s%s", cwd, base_dir);
+  if (bytes_written < 0) {
+    log_msg(MSG_ERROR, true,
+            "could not write cwd (%s) combined with base_dir (%s) to a buffer",
+            cwd, base_dir);
+    return -1;
+  }
+  if (bytes_written > 0) {
+    log_msg(
+        MSG_WARNING, false,
+        "path containing cwd (%s) and base_dir (%s) had to be truncated: %s",
+        cwd, base_dir, base_path);
+    return -1;
+  }
 
   char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
   int is_sanitized = sanitize_path(base_path, start_line->uri, sanitized_path);
   if (is_sanitized != 0) {
+    log_msg(MSG_WARNING, false, "could not properly sanitize path %s",
+            base_path);
     return -1;
   }
 
   int file_fd = get_file_fd(sanitized_path);
   if (file_fd < 0) {
+    log_msg(MSG_ERROR, true,
+            "could not get file descriptor from received path %s",
+            sanitized_path);
     return -1;
   }
 
   struct stat st;
   if (fstat(file_fd, &st) == -1) {
     log_msg(MSG_ERROR, true, "fstat has failed");
+    return -1;
   }
 
   char *protocol = "HTTP/1.1";
