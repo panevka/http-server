@@ -141,8 +141,7 @@ int create_response_status_line(char *status_line, size_t status_line_len,
 }
 
 char *create_response_head(size_t body_length) {
-  const char headers[] = "HTTP/1.1 200 OK\r\n"
-                         "Content-Type: text/html\r\n"
+  const char headers[] = "Content-Type: text/html\r\n"
                          "Content-Length: %lu\r\n"
                          "Connection: close\r\n\r\n";
 
@@ -230,6 +229,13 @@ void set_response_body(struct response *r, int fd, off_t offset, size_t len) {
   r->body.length = len;
 }
 
+int serialize_response_status_line(struct response_status_line *line, char *buf,
+                                   size_t buf_len) {
+  int size = snprintf(buf, buf_len, "%s %s %s\r\n", line->protocol,
+                      line->status_code, line->reason_phrase);
+  return size;
+}
+
 int prepare_response(struct response *response,
                      struct request_start_line *start_line) {
 
@@ -273,6 +279,7 @@ int prepare_response(struct response *response,
 }
 
 void handle_request(int sock) {
+
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
@@ -299,43 +306,31 @@ void handle_request(int sock) {
   struct request_start_line start_line;
   get_start_line(buffer, read_result, &start_line);
 
+  struct response res;
+  prepare_response(&res, &start_line);
   long sent_bytes = 0;
 
-  char cwd[MAX_FILE_PATH_LENGTH + 1];
-  if (getcwd(cwd, sizeof(cwd)) == NULL) {
-    log_msg(MSG_ERROR, true, "Could not get current working directory. ");
+  char status_line[512];
+  serialize_response_status_line(&res.status_line, status_line,
+                                 sizeof(status_line));
 
-    goto END_CONNECTION;
-  }
-  printf("%s", cwd);
-
-  char base_dir[] = "/static";
-  char base_path[MAX_FILE_PATH_LENGTH + 1];
-  snprintf(base_path, MAX_FILE_PATH_LENGTH, "%s%s", cwd, base_dir);
-
-  char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
-  int is_sanitized = sanitize_path(base_path, start_line.uri, sanitized_path);
-  if (is_sanitized != 0) {
-    goto END_CONNECTION;
-  }
-
-  int file_fd = get_file_fd(sanitized_path);
-  if (file_fd < 0) {
-    goto END_CONNECTION;
-  }
-
-  struct stat st;
-
-  if (fstat(file_fd, &st) == -1) {
-    log_msg(MSG_ERROR, true, "fstat has failed");
-  }
-
-  const char *headers = create_response_head(st.st_size);
-  const size_t headers_size = strlen(headers);
+  const size_t headers_size = strlen(res.headers);
 
   while (1) {
-    log_msg(MSG_INFO, false, "sending");
-    sent_bytes += send(sock, headers, headers_size, 0);
+    log_msg(MSG_INFO, false, "sending %s", status_line);
+    sent_bytes += send(sock, status_line, strlen(status_line), 0);
+    if (sent_bytes == -1) {
+      log_msg(MSG_ERROR, true, "send has failed");
+      break;
+    }
+    if (sent_bytes == strlen(status_line))
+      break;
+  };
+  sent_bytes = 0;
+
+  while (1) {
+    log_msg(MSG_INFO, false, "sending %s", res.headers);
+    sent_bytes += send(sock, res.headers, headers_size, 0);
     if (sent_bytes == -1) {
       log_msg(MSG_ERROR, true, "send has failed");
       break;
@@ -344,12 +339,12 @@ void handle_request(int sock) {
       break;
   }
 
-  ssize_t transferred = sendfile(sock, file_fd, NULL, st.st_size);
+  ssize_t transferred = sendfile(sock, res.body.fd, NULL, res.body.length);
   if (transferred < 0) {
     log_msg(MSG_ERROR, true, "transfer failed");
   }
 
-  if (close(file_fd) != 0) {
+  if (close(res.body.fd) != 0) {
     log_msg(MSG_WARNING, true, "closing file descriptor has failed");
   };
 
