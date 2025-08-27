@@ -128,52 +128,65 @@ cleanup:
 
 int send_response(struct response *res, int sock) {
 
+  char status_line[MAX_STATUS_LINE_LENGTH];
+  char *response_head = NULL;
+  size_t status_line_len, headers_len, full_len;
   long sent_bytes = 0;
-
-  char status_line[512];
-  serialize_response_status_line(&(res->status_line), status_line,
-                                 sizeof(status_line));
-
   int return_code = -1;
+  int ret;
 
-  const size_t status_line_size = strlen(status_line);
-  const size_t headers_size = strlen(res->headers);
-  const size_t full_size = status_line_size + headers_size;
-  char response_head[full_size + 1];
-
-  int bytes_written = snprintf(response_head, sizeof(response_head), "%s%s",
-                               status_line, res->headers);
-  if (bytes_written < 0) {
-    log_msg(MSG_ERROR, true,
-            "could not write status line and headers to the buffer");
+  ret = serialize_response_status_line(&(res->status_line), status_line,
+                                       sizeof(status_line));
+  if (ret < 0 || ret >= sizeof(status_line)) {
+    log_msg(MSG_ERROR, true, "snprintf failed or content was truncated");
     goto cleanup;
   }
-  if (bytes_written >= sizeof(response_head)) {
-    log_msg(MSG_ERROR, true, "response head had to be truncated");
+
+  status_line_len = strlen(status_line);
+  headers_len = strlen(res->headers);
+  full_len = status_line_len + headers_len;
+
+  response_head = malloc(full_len + 1);
+  if (!response_head) {
+    log_msg(MSG_ERROR, true, "malloc failed");
+    goto cleanup;
+  }
+
+  ret = snprintf(response_head, sizeof(response_head), "%s%s", status_line,
+                 res->headers);
+  if (ret < 0 || ret >= sizeof(response_head)) {
+    log_msg(MSG_ERROR, true,
+            "snprintf failed or response head had to be truncated");
     goto cleanup;
   }
 
   while (1) {
     log_msg(MSG_INFO, false, "sending %s", response_head);
-    sent_bytes += send(sock, response_head, full_size, 0);
+    sent_bytes += send(sock, response_head, full_len, 0);
 
     if (sent_bytes == -1) {
       log_msg(MSG_ERROR, true, "send has failed");
-      break;
+      goto cleanup;
     }
-    if (sent_bytes == full_size)
+    if (sent_bytes == full_len)
       break;
   };
 
-  ssize_t transferred = sendfile(sock, res->body.fd, NULL, res->body.length);
-  if (transferred < 0) {
+  if (sendfile(sock, res->body.fd, NULL, res->body.length) < 0) {
     log_msg(MSG_ERROR, true, "transfer failed");
+    goto cleanup;
   }
 
   if (close(res->body.fd) != 0) {
     log_msg(MSG_WARNING, true, "closing file descriptor has failed");
+    goto cleanup;
   };
 
+  return_code = 0;
+
 cleanup:
+  if (response_head) {
+    free(response_head);
+  }
   return return_code;
 }

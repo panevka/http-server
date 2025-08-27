@@ -4,6 +4,8 @@
 #include "request.h"
 #include <sys/types.h>
 
+#define MAX_STATUS_LINE_LENGTH 512
+
 struct response_status_line {
   char *protocol;
   char *status_code;
