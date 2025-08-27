@@ -136,7 +136,7 @@ void handle_request(int sock) {
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
   char request_buf[MAX_REQUEST_SIZE + 1];
-  struct response res;
+  struct response res = {.body.fd = -1};
   struct request_start_line start_line;
 
   ssize_t read_result =
@@ -175,6 +175,7 @@ end_connection:
     if (close(res.body.fd) != 0) {
       log_msg(MSG_WARNING, true, "closing file descriptor has failed");
     };
+    res.body.fd = -1;
   }
 
   shutdown(sock, SHUT_WR);
