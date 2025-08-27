@@ -53,7 +53,7 @@ int prepare_response(struct response *response,
   char cwd[MAX_FILE_PATH_LENGTH + 1];
   char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
 
-  int rc = -1;
+  int return_code = -1;
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     log_msg(MSG_ERROR, true, "Could not get current working directory. ");
@@ -117,13 +117,13 @@ int prepare_response(struct response *response,
   set_response_headers(response, headers);
   set_response_body(response, file_fd, 0, st.st_size);
 
-  rc = 0;
+  return_code = 0;
 
 cleanup:
-  if (rc != 0 && file_fd >= 0) {
+  if (return_code != 0 && file_fd >= 0) {
     close(file_fd);
   }
-  return rc;
+  return return_code;
 }
 
 void send_response(struct response *res, int sock) {
