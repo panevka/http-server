@@ -25,6 +25,6 @@ struct response {
 int prepare_response(struct response *response,
                      struct request_start_line *start_line);
 
-void send_response(struct response *res, int sock);
+int send_response(struct response *res, int sock);
 
 #endif

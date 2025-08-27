@@ -126,7 +126,7 @@ cleanup:
   return return_code;
 }
 
-void send_response(struct response *res, int sock) {
+int send_response(struct response *res, int sock) {
 
   long sent_bytes = 0;
 
@@ -134,30 +134,36 @@ void send_response(struct response *res, int sock) {
   serialize_response_status_line(&(res->status_line), status_line,
                                  sizeof(status_line));
 
+  int return_code = -1;
+
+  const size_t status_line_size = strlen(status_line);
   const size_t headers_size = strlen(res->headers);
+  const size_t full_size = status_line_size + headers_size;
+  char response_head[full_size + 1];
+
+  int bytes_written = snprintf(response_head, sizeof(response_head), "%s%s",
+                               status_line, res->headers);
+  if (bytes_written < 0) {
+    log_msg(MSG_ERROR, true,
+            "could not write status line and headers to the buffer");
+    goto cleanup;
+  }
+  if (bytes_written >= sizeof(response_head)) {
+    log_msg(MSG_ERROR, true, "response head had to be truncated");
+    goto cleanup;
+  }
 
   while (1) {
-    log_msg(MSG_INFO, false, "sending %s", status_line);
-    sent_bytes += send(sock, status_line, strlen(status_line), 0);
+    log_msg(MSG_INFO, false, "sending %s", response_head);
+    sent_bytes += send(sock, response_head, full_size, 0);
+
     if (sent_bytes == -1) {
       log_msg(MSG_ERROR, true, "send has failed");
       break;
     }
-    if (sent_bytes == strlen(status_line))
+    if (sent_bytes == full_size)
       break;
   };
-  sent_bytes = 0;
-
-  while (1) {
-    log_msg(MSG_INFO, false, "sending %s", res->headers);
-    sent_bytes += send(sock, res->headers, headers_size, 0);
-    if (sent_bytes == -1) {
-      log_msg(MSG_ERROR, true, "send has failed");
-      break;
-    }
-    if (sent_bytes == (headers_size))
-      break;
-  }
 
   ssize_t transferred = sendfile(sock, res->body.fd, NULL, res->body.length);
   if (transferred < 0) {
@@ -167,4 +173,7 @@ void send_response(struct response *res, int sock) {
   if (close(res->body.fd) != 0) {
     log_msg(MSG_WARNING, true, "closing file descriptor has failed");
   };
+
+cleanup:
+  return return_code;
 }
