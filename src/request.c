@@ -171,6 +171,12 @@ void handle_request(int sock) {
   }
 
 end_connection:
+  if (res.body.fd >= 0) {
+    if (close(res.body.fd) != 0) {
+      log_msg(MSG_WARNING, true, "closing file descriptor has failed");
+    };
+  }
+
   shutdown(sock, SHUT_WR);
   return;
 }

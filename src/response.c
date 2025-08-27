@@ -120,9 +120,6 @@ int prepare_response(struct response *response,
   return_code = 0;
 
 cleanup:
-  if (return_code != 0 && file_fd >= 0) {
-    close(file_fd);
-  }
   return return_code;
 }
 
@@ -176,11 +173,6 @@ int send_response(struct response *res, int sock) {
     log_msg(MSG_ERROR, true, "transfer failed");
     goto cleanup;
   }
-
-  if (close(res->body.fd) != 0) {
-    log_msg(MSG_WARNING, true, "closing file descriptor has failed");
-    goto cleanup;
-  };
 
   return_code = 0;
 
