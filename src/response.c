@@ -152,9 +152,9 @@ int send_response(struct response *res, int sock) {
     goto cleanup;
   }
 
-  ret = snprintf(response_head, sizeof(response_head), "%s%s", status_line,
-                 res->headers);
-  if (ret < 0 || ret >= sizeof(response_head)) {
+  ret =
+      snprintf(response_head, full_len + 1, "%s%s", status_line, res->headers);
+  if (ret < 0 || ret >= full_len + 1) {
     log_msg(MSG_ERROR, true,
             "snprintf failed or response head had to be truncated");
     goto cleanup;
