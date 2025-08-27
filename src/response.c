@@ -28,8 +28,8 @@ void set_response_status_line(struct response *r, char *protocol,
   r->status_line.reason_phrase = reason_phrase;
 }
 
-void set_response_headers(struct response *r, char *headers) {
-  r->headers = headers;
+int set_response_headers(struct response *r, char *headers) {
+  return snprintf(r->headers, sizeof(r->headers), "%s", headers);
 }
 
 void set_response_body(struct response *r, int fd, off_t offset, size_t len) {
@@ -100,21 +100,19 @@ int prepare_response(struct response *response,
   char *protocol = "HTTP/1.1";
   char *status_code = "200";
   char *reason_phrase = "OK";
-  char headers[512];
 
-  int headers_size =
-      create_response_headers(headers, sizeof(headers), st.st_size);
+  int headers_size = create_response_headers(
+      response->headers, MAX_HEADERS_LENGTH + 1, st.st_size);
   if (headers_size < 0) {
     log_msg(MSG_ERROR, true, "could not create headers");
     goto cleanup;
   }
-  if (headers_size >= sizeof(headers)) {
+  if (headers_size >= MAX_HEADERS_LENGTH + 1) {
     log_msg(MSG_WARNING, false, "headers had to be truncated");
     goto cleanup;
   }
 
   set_response_status_line(response, protocol, status_code, reason_phrase);
-  set_response_headers(response, headers);
   set_response_body(response, file_fd, 0, st.st_size);
 
   return_code = 0;

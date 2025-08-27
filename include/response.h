@@ -5,6 +5,7 @@
 #include <sys/types.h>
 
 #define MAX_STATUS_LINE_LENGTH 512
+#define MAX_HEADERS_LENGTH 512
 
 struct response_status_line {
   char *protocol;
@@ -15,7 +16,7 @@ struct response_status_line {
 struct response {
   struct response_status_line status_line;
 
-  char *headers;
+  char headers[MAX_HEADERS_LENGTH + 1];
 
   struct {
     int fd;
