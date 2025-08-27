@@ -146,7 +146,7 @@ void handle_request(int sock) {
 
     if (errno != EWOULDBLOCK && errno != EAGAIN) {
       log_msg(MSG_ERROR, true, "error occurred while reading request data");
-      goto END_CONNECTION;
+      goto end_connection;
     }
 
     log_msg(MSG_WARNING, false, "request timeout");
@@ -163,7 +163,7 @@ void handle_request(int sock) {
 
   send_response(&res, sock);
 
-END_CONNECTION:
+end_connection:
   shutdown(sock, SHUT_WR);
   return;
 }

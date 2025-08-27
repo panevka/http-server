@@ -57,7 +57,7 @@ int prepare_response(struct response *response,
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     log_msg(MSG_ERROR, true, "Could not get current working directory. ");
-    goto CLEANUP;
+    goto cleanup;
   }
 
   int bytes_written =
@@ -66,21 +66,21 @@ int prepare_response(struct response *response,
     log_msg(MSG_ERROR, true,
             "could not write cwd (%s) combined with base_dir (%s) to a buffer",
             cwd, base_dir);
-    goto CLEANUP;
+    goto cleanup;
   }
   if (bytes_written >= MAX_FILE_PATH_LENGTH) {
     log_msg(
         MSG_WARNING, false,
         "path containing cwd (%s) and base_dir (%s) had to be truncated: %s",
         cwd, base_dir, base_path);
-    goto CLEANUP;
+    goto cleanup;
   }
 
   int is_sanitized = sanitize_path(base_path, start_line->uri, sanitized_path);
   if (is_sanitized != 0) {
     log_msg(MSG_WARNING, false, "could not properly sanitize path %s",
             base_path);
-    goto CLEANUP;
+    goto cleanup;
   }
 
   file_fd = get_file_fd(sanitized_path);
@@ -88,13 +88,13 @@ int prepare_response(struct response *response,
     log_msg(MSG_ERROR, true,
             "could not get file descriptor from received path %s",
             sanitized_path);
-    goto CLEANUP;
+    goto cleanup;
   }
 
   struct stat st;
   if (fstat(file_fd, &st) == -1) {
     log_msg(MSG_ERROR, true, "fstat has failed");
-    goto CLEANUP;
+    goto cleanup;
   }
 
   char *protocol = "HTTP/1.1";
@@ -106,11 +106,11 @@ int prepare_response(struct response *response,
       create_response_headers(headers, sizeof(headers), st.st_size);
   if (headers_size < 0) {
     log_msg(MSG_ERROR, true, "could not create headers");
-    goto CLEANUP;
+    goto cleanup;
   }
   if (headers_size >= sizeof(headers)) {
     log_msg(MSG_WARNING, false, "headers had to be truncated");
-    goto CLEANUP;
+    goto cleanup;
   }
 
   set_response_status_line(response, protocol, status_code, reason_phrase);
@@ -119,7 +119,7 @@ int prepare_response(struct response *response,
 
   rc = 0;
 
-CLEANUP:
+cleanup:
   if (rc != 0 && file_fd >= 0) {
     close(file_fd);
   }

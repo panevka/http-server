@@ -77,14 +77,14 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
   scanned_directory = opendir(directory_path);
   if (scanned_directory == NULL) {
     log_msg(MSG_ERROR, true, "could not open directory %s.", directory_path);
-    goto FAIL;
+    goto fail;
   }
 
   // Open file where the content list will be saved
   output_file = fopen(file_save_path, "w");
   if (output_file == NULL) {
     log_msg(MSG_ERROR, true, "could not open file %s.", file_save_path);
-    goto FAIL;
+    goto fail;
   }
 
   // Loop for fetching directory entries
@@ -95,10 +95,10 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     dir_entry = readdir(scanned_directory);
     if (errno != 0) {
       log_msg(MSG_ERROR, true, "fetching directory entry failed.");
-      goto FAIL;
+      goto fail;
     }
     if (dir_entry == NULL) {
-      goto SUCCESS;
+      goto success;
     }
 
     // Concatenate directory path with entry name
@@ -107,12 +107,12 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
                            directory_path, dir_entry->d_name);
     if (written < 0) {
       log_msg(MSG_ERROR, true, "could not write to entry path buffer.");
-      goto FAIL;
+      goto fail;
     }
     if ((size_t)written >= sizeof(entry_path)) {
       log_msg(MSG_ERROR, true,
               "could not write all data to entry path buffer.");
-      goto FAIL;
+      goto fail;
     }
 
     // Get info about directory entry
@@ -120,7 +120,7 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
       log_msg(MSG_ERROR, true,
               "Could not obtain information about directory entry: %s.",
               entry_path);
-      goto FAIL;
+      goto fail;
     }
 
     // Write entry to an HTML file
@@ -131,12 +131,12 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path) {
     }
   }
 
-SUCCESS:
+success:
   fclose(output_file);
   closedir(scanned_directory);
   return 0;
 
-FAIL:
+fail:
   if (output_file) {
     fclose(output_file);
   }
