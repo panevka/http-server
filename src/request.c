@@ -165,7 +165,10 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
-  send_response(&res, sock);
+  if (send_response(&res, sock) != 0) {
+    log_msg(MSG_ERROR, false, "could not send response");
+    goto end_connection;
+  }
 
 end_connection:
   shutdown(sock, SHUT_WR);
