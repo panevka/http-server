@@ -153,6 +153,7 @@ void handle_request(int sock) {
 
   } else if (read_result == REQ_OVERFLOW) {
     log_msg(MSG_WARNING, false, "could not handle request, request too big");
+    goto end_connection;
   }
 
   request_buf[sizeof(request_buf) - 1] = '\0';
