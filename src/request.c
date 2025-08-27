@@ -159,7 +159,11 @@ void handle_request(int sock) {
 
   get_start_line(request_buf, read_result, &start_line);
 
-  prepare_response(&res, &start_line);
+  int response_success = prepare_response(&res, &start_line);
+  if (response_success != 0) {
+    log_msg(MSG_ERROR, false, "could not prepare response");
+    goto end_connection;
+  }
 
   send_response(&res, sock);
 
