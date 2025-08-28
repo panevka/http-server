@@ -11,12 +11,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-int create_response_headers(char *headers_buf, size_t buf_len,
+int create_response_headers(char *headers_buf, size_t buf_len, char *mime_type,
                             size_t body_length) {
-  const char headers[] = "Content-Type: text/html\r\n"
+  const char headers[] = "Content-Type: %s\r\n"
                          "Content-Length: %lu\r\n"
                          "Connection: close\r\n\r\n";
-  int bytes_written = snprintf(headers_buf, buf_len, headers, body_length);
+  int bytes_written =
+      snprintf(headers_buf, buf_len, headers, mime_type, body_length);
 
   return bytes_written;
 }
@@ -52,6 +53,7 @@ int prepare_response(struct response *response,
   char base_path[MAX_FILE_PATH_LENGTH + 1];
   char cwd[MAX_FILE_PATH_LENGTH + 1];
   char sanitized_path[MAX_FILE_PATH_LENGTH + 1];
+  char *mime_type;
 
   int return_code = -1;
 
@@ -101,8 +103,14 @@ int prepare_response(struct response *response,
   char *status_code = "200";
   char *reason_phrase = "OK";
 
+  mime_type = get_mime_type(sanitized_path);
+  if (mime_type == NULL) {
+    log_msg(MSG_WARNING, false, "could not get mime type for %s", base_path);
+    goto cleanup;
+  }
+
   int headers_size = create_response_headers(
-      response->headers, MAX_HEADERS_LENGTH + 1, st.st_size);
+      response->headers, MAX_HEADERS_LENGTH + 1, mime_type, st.st_size);
   if (headers_size < 0) {
     log_msg(MSG_ERROR, true, "could not create headers");
     goto cleanup;
