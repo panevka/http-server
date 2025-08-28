@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <magic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,6 +15,41 @@ static void close_file(FILE *f) {
   if (f && fclose(f) != 0) {
     log_msg(MSG_WARNING, false, "could not close the file");
   }
+}
+
+char *get_mime_type(char *path) {
+
+  const char *mime;
+  magic_t magic;
+  char *result = NULL;
+
+  magic = magic_open(MAGIC_MIME_TYPE);
+  if (magic == NULL) {
+    log_msg(MSG_ERROR, true, "could not create magic cookie for file %s", path);
+    goto cleanup;
+  }
+
+  if (magic_load(magic, NULL) != 0) {
+    log_msg(MSG_ERROR, false, "could not load magic database");
+    goto cleanup;
+  }
+
+  mime = magic_file(magic, path);
+  if (mime == NULL) {
+    log_msg(MSG_ERROR, false, "could not get textual description of mime type");
+    goto cleanup;
+  }
+
+  result = strdup(mime);
+  if (result == NULL) {
+    log_msg(MSG_ERROR, false, "out of memory while duplicating mime string");
+  }
+
+cleanup:
+  if (magic) {
+    magic_close(magic);
+  }
+  return result;
 }
 
 off_t read_file(const char *path, char *file_buffer, size_t len) {

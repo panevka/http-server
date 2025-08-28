@@ -13,4 +13,6 @@ int write_dir_entries_html(char *directory_path, const char *file_save_path);
 
 int get_file_fd(char *path);
 
+char *get_mime_type(char *path);
+
 #endif
