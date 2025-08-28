@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -I./include -Wall -g
+LIBS = -lmagic
+CFLAGS = -I./include -Wall -g -O0
 SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c, build/%.o, $(SRC))
 TARGET = a.out
@@ -7,7 +8,7 @@ TARGET = a.out
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $@
+	$(CC) $(OBJ) -o $@ $(LIBS)
 
 build/%.o: src/%.c
 	@mkdir -p build
