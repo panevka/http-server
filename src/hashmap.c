@@ -1,5 +1,7 @@
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define INITIAL_CAPACITY 16
 
@@ -145,3 +147,5 @@ void *hashmap_get(struct hashmap *map, const char *key) {
   }
   return NULL;
 }
+
+size_t hashmap_get_length(struct hashmap *map) { return map->length; }
