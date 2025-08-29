@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdlib.h>
 
 #define INITIAL_CAPACITY 16
 
@@ -12,3 +13,20 @@ struct hashmap {
   size_t capacity;
   size_t length;
 };
+
+struct hashmap *hashmap_create(void) {
+  struct hashmap *map = malloc(sizeof(struct hashmap));
+  if (map == NULL) {
+    return NULL;
+  }
+  map->length = 0;
+  map->capacity = INITIAL_CAPACITY;
+
+  map->entries = calloc(map->capacity, sizeof(struct hashmap_entry));
+  if (map->entries == NULL) {
+    free(map);
+    return NULL;
+  }
+
+  return map;
+}
