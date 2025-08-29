@@ -47,3 +47,19 @@ static unsigned long hashmap_hash(const char *key) {
   }
   return hash_value;
 }
+void *hashmap_get(struct hashmap *map, const char *key) {
+  unsigned long hash = hashmap_hash(key);
+  size_t index = hash % map->capacity;
+
+  while (map->entries[index].key != NULL) {
+    if (strcmp(key, map->entries[index].key) == 0) {
+      return map->entries[index].value;
+    }
+
+    index++;
+    if (index >= map->capacity) {
+      index = 0;
+    }
+  }
+  return NULL;
+}
