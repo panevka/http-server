@@ -30,3 +30,12 @@ struct hashmap *hashmap_create(void) {
 
   return map;
 }
+
+void hashmap_destroy(struct hashmap *map) {
+  for (size_t i = 0; i < map->capacity; i++) {
+    free((void *)map->entries[i].key);
+  }
+
+  free(map->entries);
+  free(map);
+}
