@@ -39,3 +39,11 @@ void hashmap_destroy(struct hashmap *map) {
   free(map->entries);
   free(map);
 }
+
+static unsigned long hashmap_hash(const char *key) {
+  unsigned long hash_value = 0;
+  for (size_t i = 0; key[i] != '\0'; i++) {
+    hash_value = 31 * hash_value + (unsigned char)key[i];
+  }
+  return hash_value;
+}
