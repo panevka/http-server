@@ -14,15 +14,17 @@ struct hashmap {
   struct hashmap_entry *entries;
   size_t capacity;
   size_t length;
+  void (*free_value)(void *value);
 };
 
-struct hashmap *hashmap_create(void) {
+struct hashmap *hashmap_create(void (*free_value)(void *value)) {
   struct hashmap *map = malloc(sizeof(struct hashmap));
   if (map == NULL) {
     return NULL;
   }
   map->length = 0;
   map->capacity = INITIAL_CAPACITY;
+  map->free_value = free_value;
 
   map->entries = calloc(map->capacity, sizeof(struct hashmap_entry));
   if (map->entries == NULL) {
@@ -36,6 +38,9 @@ struct hashmap *hashmap_create(void) {
 void hashmap_destroy(struct hashmap *map) {
   for (size_t i = 0; i < map->capacity; i++) {
     free((void *)map->entries[i].key);
+    if (map->free_value != NULL) {
+      map->free_value(map->entries[i].value);
+    }
   }
 
   free(map->entries);
