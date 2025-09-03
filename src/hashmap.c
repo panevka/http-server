@@ -47,34 +47,6 @@ void hashmap_destroy(struct hashmap *map) {
   free(map);
 }
 
-static bool hashmap_expand(struct hashmap *map) {
-  size_t new_capacity = map->capacity * 2;
-
-  // handle overflow
-  if (new_capacity < map->capacity) {
-    return false;
-  }
-
-  struct hashmap_entry *new_entries =
-      calloc(new_capacity, sizeof(struct hashmap_entry));
-  if (new_entries == NULL) {
-    return false;
-  }
-
-  for (size_t i = 0; i < map->capacity; i++) {
-    struct hashmap_entry entry = map->entries[i];
-    if (entry.key != NULL) {
-      // hashmap_set_entry(new_entries, new_capacity, entry.key, entry.value,
-      //                   NULL);
-    }
-  }
-
-  free(map->entries);
-  map->entries = new_entries;
-  map->capacity = new_capacity;
-  return true;
-}
-
 static unsigned long hashmap_hash(const char *key) {
   unsigned long hash_value = 0;
   for (size_t i = 0; key[i] != '\0'; i++) {
@@ -115,6 +87,33 @@ static const char *hashmap_set_entry(struct hashmap_entry *entries,
   return key;
 }
 
+static bool hashmap_expand(struct hashmap *map) {
+  size_t new_capacity = map->capacity * 2;
+
+  // handle overflow
+  if (new_capacity < map->capacity) {
+    return false;
+  }
+
+  struct hashmap_entry *new_entries =
+      calloc(new_capacity, sizeof(struct hashmap_entry));
+  if (new_entries == NULL) {
+    return false;
+  }
+
+  for (size_t i = 0; i < map->capacity; i++) {
+    struct hashmap_entry entry = map->entries[i];
+    if (entry.key != NULL) {
+      hashmap_set_entry(new_entries, new_capacity, entry.key, entry.value,
+                        NULL);
+    }
+  }
+
+  free(map->entries);
+  map->entries = new_entries;
+  map->capacity = new_capacity;
+  return true;
+}
 const char *hashmap_put(struct hashmap *map, char *key, char *value) {
   if (value == NULL) {
     return NULL;
