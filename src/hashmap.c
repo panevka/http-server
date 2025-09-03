@@ -119,17 +119,11 @@ const char *hashmap_put(struct hashmap *map, char *key, char *value) {
     return NULL;
   }
 
-  unsigned long index;
-
   if (map->length >= map->capacity * 3 / 4) {
     if (!hashmap_expand(map)) {
       return NULL;
     }
   }
-
-  do {
-    index = hashmap_hash(key) % map->capacity;
-  } while (map->entries[index].key != NULL);
 
   return hashmap_set_entry(map->entries, map->capacity, key, value,
                            &map->length);
