@@ -177,6 +177,57 @@ int parse_header(char *line_buf, size_t line_buf_len, struct header *header) {
   }
   return 0;
 }
+int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
+
+  int state = 0;
+  size_t header_line_start_index = 0;
+  size_t header_line_end_index = 0;
+
+  for (size_t i = 0; i < buffer_len; i++) {
+    char c = buffer[i];
+
+    switch (state) {
+    case 0:
+      state = (c == '\r') ? 1 : 0;
+      break;
+    case 1:
+      state = (c == '\n') ? 2 : (c == '\r') ? 1 : 0;
+      break;
+    case 2:
+      state = (c == '\r') ? 3 : 0;
+      break;
+    case 3:
+      if (c == '\n') {
+        return 0;
+      } else {
+        state = 0;
+      }
+      break;
+    }
+
+    if (state == 2) {
+      header_line_end_index = i - 2;
+      struct header hd;
+      size_t line_length = header_line_end_index - header_line_start_index +
+                           1; // + 1 because indexes begin from 0
+      if (parse_header(&buffer[header_line_start_index], line_length, &hd) !=
+          0) {
+        log_msg(MSG_ERROR, false, "could not parse header");
+        return -1;
+      }
+      char *value_ptr = strdup(hd.value);
+      if (value_ptr == NULL) {
+        log_msg(MSG_ERROR, false, "could not allocate space for header value");
+        return -1;
+      }
+      hashmap_put(headers, hd.key, value_ptr);
+      header_line_start_index = i + 1;
+    }
+  }
+
+  return -1; // incomplete headers
+}
+
 void handle_request(int sock) {
 
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
