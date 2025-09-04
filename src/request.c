@@ -145,6 +145,38 @@ struct request {
   char *body;
 };
 
+struct header {
+  char key[MAX_REQUEST_HEADER_KEY_SIZE + 1];
+  char value[MAX_REQUEST_HEADER_VALUE_SIZE + 1];
+};
+
+int parse_header(char *line_buf, size_t line_buf_len, struct header *header) {
+
+  int key_value_delimiter_met = 0;
+  for (size_t i = 0; i < line_buf_len; i++) {
+    char c = line_buf[i];
+
+    if (c == ':' && key_value_delimiter_met == 0) {
+      key_value_delimiter_met = 1;
+
+      char *key_start = line_buf;
+      size_t key_len = i;
+
+      char *value_start = line_buf + key_len +
+                          2; // +2 to compensate for : and space before value
+      size_t value_len = (line_buf + line_buf_len) - value_start;
+
+      if (key_len >= sizeof(header->key) ||
+          value_len >= sizeof(header->value)) {
+        return -1;
+      }
+      snprintf(header->key, key_len + 1, "%s", key_start);
+      snprintf(header->value, value_len + 1, "%s", value_start);
+      return 0;
+    }
+  }
+  return 0;
+}
 void handle_request(int sock) {
 
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
