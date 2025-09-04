@@ -177,6 +177,7 @@ int parse_header(char *line_buf, size_t line_buf_len, struct header *header) {
   }
   return 0;
 }
+
 int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
 
   int state = 0;
@@ -239,14 +240,23 @@ void parse_request(struct request *req, char *buffer, size_t buffer_len) {
   }
 }
 
+void free_header_values(void *value) {
+  if (value != NULL) {
+    free(value);
+  }
+}
+
 void handle_request(int sock) {
 
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
+  struct request req;
+  struct hashmap *headers = hashmap_create(free_header_values);
+  req.headers = headers;
+
   char request_buf[MAX_REQUEST_SIZE + 1];
   struct response res = {.body.fd = -1};
-  struct request_start_line start_line;
 
   ssize_t read_result =
       read_request(sock, request_buf, sizeof(request_buf) - 1);
@@ -265,11 +275,10 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
+  parse_request(&req, request_buf, read_result);
   request_buf[sizeof(request_buf) - 1] = '\0';
 
-  get_start_line(request_buf, read_result, &start_line);
-
-  int response_success = prepare_response(&res, &start_line);
+  int response_success = prepare_response(&res, &req.start_line);
   if (response_success != 0) {
     log_msg(MSG_ERROR, false, "could not prepare response");
     goto end_connection;
