@@ -11,17 +11,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-int create_response_headers(char *headers_buf, size_t buf_len, char *mime_type,
-                            size_t body_length) {
-  const char headers[] = "Content-Type: %s\r\n"
-                         "Content-Length: %lu\r\n"
-                         "Connection: close\r\n\r\n";
-  int bytes_written =
-      snprintf(headers_buf, buf_len, headers, mime_type, body_length);
-
-  return bytes_written;
-}
-
 void set_response_status_line(struct response *r, char *protocol,
                               char *status_code, char *reason_phrase) {
   r->status_line.protocol = protocol;
@@ -37,6 +26,17 @@ void set_response_body(struct response *r, int fd, off_t offset, size_t len) {
   r->body.fd = fd;
   r->body.offset = offset;
   r->body.length = len;
+}
+
+int create_response_headers(char *headers_buf, size_t buf_len, char *mime_type,
+                            size_t body_length) {
+  const char headers[] = "Content-Type: %s\r\n"
+                         "Content-Length: %lu\r\n"
+                         "Connection: close\r\n\r\n";
+  int bytes_written =
+      snprintf(headers_buf, buf_len, headers, mime_type, body_length);
+
+  return bytes_written;
 }
 
 int serialize_response_status_line(struct response_status_line *line, char *buf,
