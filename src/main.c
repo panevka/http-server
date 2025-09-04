@@ -42,7 +42,7 @@ int main(void) {
 
       int opt_result;
       struct timeval timeout;
-      timeout.tv_sec = 10;
+      timeout.tv_sec = 2;
       timeout.tv_usec = 0;
 
       opt_result = setsockopt(new_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout,
