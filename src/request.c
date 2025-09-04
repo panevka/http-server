@@ -250,6 +250,9 @@ void handle_request(int sock) {
 
   struct request req;
   struct hashmap *headers = hashmap_create(free_header_values);
+  if (headers == NULL) {
+    goto end_connection;
+  }
   req.headers = headers;
 
   char request_buf[MAX_REQUEST_SIZE + 1];
@@ -293,6 +296,9 @@ end_connection:
       log_msg(MSG_WARNING, true, "closing file descriptor has failed");
     };
     res.body.fd = -1;
+  }
+  if (headers != NULL) {
+    hashmap_destroy(headers);
   }
 
   shutdown(sock, SHUT_WR);
