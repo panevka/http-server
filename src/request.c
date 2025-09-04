@@ -46,24 +46,24 @@
  *       length is equal to or exceeds the size of their respective
  *       fields in the `request_start_line` structure.
  */
-int get_start_line(char *request, size_t request_len,
-                   struct request_start_line *start_line) {
+int parse_start_line(char *buf, size_t buf_len,
+                     struct request_start_line *start_line,
+                     size_t *start_line_end) {
 
   // Find first delimiter (space)
-  const char *sp1 = memchr(request, ' ', request_len);
+  const char *sp1 = memchr(buf, ' ', buf_len);
   if (!sp1) {
     return -1;
   }
 
-  size_t method_len = (size_t)(sp1 - request);
+  size_t method_len = (size_t)(sp1 - buf);
   if (method_len >= sizeof(start_line->method)) {
     log_msg(MSG_ERROR, false, "method too long");
     return -1;
   }
 
   // Find second delimiter (space)
-  const char *sp2 =
-      memchr(sp1 + 1, ' ', request_len - (size_t)(sp1 + 1 - request));
+  const char *sp2 = memchr(sp1 + 1, ' ', buf_len - (size_t)(sp1 + 1 - buf));
   if (!sp2) {
     return -1;
   }
@@ -75,20 +75,23 @@ int get_start_line(char *request, size_t request_len,
   }
 
   // Find third delimiter (carriage return and line feed)
-  const char *crlf =
-      memchr(sp2 + 1, '\r', request_len - (size_t)(sp2 + 1 - request));
-  if (!crlf) {
-    crlf = request + request_len;
+  const char *cr = memchr(sp2 + 1, '\r', buf_len - (size_t)(sp2 + 1 - buf));
+  if (!cr || cr == buf + buf_len) {
+    return -1;
+  }
+  const char *lf = cr + 1;
+  if (*lf != '\n') {
+    return -1;
   }
 
-  size_t proto_len = (size_t)(crlf - (sp2 + 1));
+  size_t proto_len = (size_t)(cr - (sp2 + 1));
   if (proto_len >= sizeof(start_line->protocol)) {
     log_msg(MSG_ERROR, false, "protocol too long");
     return -1;
   }
 
   // Copy fields to received struct
-  memcpy(start_line->method, request, method_len);
+  memcpy(start_line->method, buf, method_len);
   start_line->method[method_len] = '\0';
 
   memcpy(start_line->uri, sp1 + 1, uri_len);
@@ -96,6 +99,8 @@ int get_start_line(char *request, size_t request_len,
 
   memcpy(start_line->protocol, sp2 + 1, proto_len);
   start_line->protocol[proto_len] = '\0';
+
+  *start_line_end = (size_t)(lf - buf + 1); // buffer offset just past \n
 
   return 0;
 }
