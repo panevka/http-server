@@ -1,4 +1,5 @@
 #include "request.h"
+#include "hashmap.h"
 #include "io.h"
 #include "logging.h"
 #include "response.h"
@@ -15,6 +16,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#define MAX_REQUEST_HEADER_KEY_SIZE 512
+#define MAX_REQUEST_HEADER_VALUE_SIZE 1024
 
 /**
  * @brief Parses the start line of an HTTP request.
@@ -134,6 +138,12 @@ ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
 
   return (ssize_t)bytes_read;
 }
+
+struct request {
+  struct request_start_line start_line;
+  struct hashmap *headers;
+  char *body;
+};
 
 void handle_request(int sock) {
 
