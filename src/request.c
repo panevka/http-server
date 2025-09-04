@@ -139,12 +139,6 @@ ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
   return (ssize_t)bytes_read;
 }
 
-struct request {
-  struct request_start_line start_line;
-  struct hashmap *headers;
-  char *body;
-};
-
 struct header {
   char key[MAX_REQUEST_HEADER_KEY_SIZE + 1];
   char value[MAX_REQUEST_HEADER_VALUE_SIZE + 1];

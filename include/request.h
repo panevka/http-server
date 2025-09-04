@@ -13,6 +13,12 @@ struct request_start_line {
   char protocol[MAX_PROTOCOL_LENGTH + 1];
 };
 
+struct request {
+  struct request_start_line start_line;
+  struct hashmap *headers;
+  char *body;
+};
+
 void handle_request(int sock);
 
 #endif
