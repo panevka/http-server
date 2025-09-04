@@ -228,6 +228,17 @@ int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
   return -1; // incomplete headers
 }
 
+void parse_request(struct request *req, char *buffer, size_t buffer_len) {
+
+  size_t offset = 0;
+  if (parse_start_line(buffer, buffer_len, &req->start_line, &offset) != 0) {
+    log_msg(MSG_ERROR, false, "could not parse start line");
+  }
+  if (parse_headers(buffer + offset, buffer_len - offset, req->headers) != 0) {
+    log_msg(MSG_INFO, false, "parsing headers failed");
+  }
+}
+
 void handle_request(int sock) {
 
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
