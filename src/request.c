@@ -277,8 +277,7 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
-  int response_success = prepare_response(&res, &req.start_line);
-  if (response_success != 0) {
+  if (prepare_response(&res, &req.start_line) != 0) {
     log_msg(MSG_ERROR, false, "could not prepare response");
     goto end_connection;
   }
