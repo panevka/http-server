@@ -276,7 +276,6 @@ void handle_request(int sock) {
     log_msg(MSG_WARNING, false, "could not parse the request");
     goto end_connection;
   }
-  request_buf[sizeof(request_buf) - 1] = '\0';
 
   int response_success = prepare_response(&res, &req.start_line);
   if (response_success != 0) {
