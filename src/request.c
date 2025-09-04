@@ -223,15 +223,18 @@ int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
   return -1; // incomplete headers
 }
 
-void parse_request(struct request *req, char *buffer, size_t buffer_len) {
+int parse_request(struct request *req, char *buffer, size_t buffer_len) {
 
   size_t offset = 0;
   if (parse_start_line(buffer, buffer_len, &req->start_line, &offset) != 0) {
     log_msg(MSG_ERROR, false, "could not parse start line");
+    return -1;
   }
   if (parse_headers(buffer + offset, buffer_len - offset, req->headers) != 0) {
     log_msg(MSG_INFO, false, "parsing headers failed");
+    return -1;
   }
+  return 0;
 }
 
 void free_header_values(void *value) {
@@ -269,7 +272,10 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
-  parse_request(&req, request_buf, read_result);
+  if (parse_request(&req, request_buf, read_result) != 0) {
+    log_msg(MSG_WARNING, false, "could not parse the request");
+    goto end_connection;
+  }
   request_buf[sizeof(request_buf) - 1] = '\0';
 
   int response_success = prepare_response(&res, &req.start_line);
