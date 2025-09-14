@@ -3,6 +3,7 @@
 #include "io.h"
 #include "logging.h"
 #include "response.h"
+#include "router.h"
 #include <dirent.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -280,8 +281,8 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
-  if (prepare_response(&res, &req.start_line) != 0) {
-    log_msg(MSG_ERROR, false, "could not prepare response");
+  if (route(&req, &res) != 0) {
+    log_msg(MSG_ERROR, false, "routing has failed");
     goto end_connection;
   }
 
