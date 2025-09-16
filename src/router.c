@@ -1,3 +1,4 @@
+#include "handler.h"
 #include "logging.h"
 #include "request.h"
 #include "response.h"
@@ -13,7 +14,11 @@ int route(struct request *req, struct response *res) {
       return_code = 0;
     }
   } else if (strcmp(req->start_line.method, "POST") == 0) {
+
     log_msg(MSG_INFO, false, "POST request");
+    if (handle_post_request(req) == 0) {
+      return_code = 0;
+    }
   } else {
     log_msg(MSG_WARNING, false, "unknown request method");
   }
