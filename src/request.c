@@ -271,7 +271,7 @@ int parse_request(struct request *req, char *buffer, size_t buffer_len) {
     return -1;
   }
 
-  memcpy(req->body, buffer + request_head_size + 1, body_size);
+  memcpy(req->body, buffer + request_head_size, body_size);
   req->body_size = body_size;
 
   return 0;
