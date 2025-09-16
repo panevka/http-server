@@ -51,9 +51,9 @@
  *       length is equal to or exceeds the size of their respective
  *       fields in the `request_start_line` structure.
  */
-int parse_start_line(char *buf, size_t buf_len,
-                     struct request_start_line *start_line,
-                     size_t *start_line_end) {
+ssize_t parse_start_line(char *buf, size_t buf_len,
+                         struct request_start_line *start_line,
+                         size_t *start_line_size) {
 
   // Find first delimiter (space)
   const char *sp1 = memchr(buf, ' ', buf_len);
@@ -68,7 +68,9 @@ int parse_start_line(char *buf, size_t buf_len,
   }
 
   // Find second delimiter (space)
-  const char *sp2 = memchr(sp1 + 1, ' ', buf_len - (size_t)(sp1 + 1 - buf));
+  const char *method_end = sp1 + 1;
+  size_t buf_content_left = buf_len - (size_t)(method_end - buf);
+  const char *sp2 = memchr(method_end, ' ', buf_content_left);
   if (!sp2) {
     return -1;
   }
@@ -80,7 +82,8 @@ int parse_start_line(char *buf, size_t buf_len,
   }
 
   // Find third delimiter (carriage return and line feed)
-  const char *cr = memchr(sp2 + 1, '\r', buf_len - (size_t)(sp2 + 1 - buf));
+  const char *uri_end = sp2 + 1;
+  const char *cr = memchr(uri_end, '\r', buf_len - (size_t)(uri_end - buf));
   if (!cr || cr == buf + buf_len) {
     return -1;
   }
@@ -105,25 +108,30 @@ int parse_start_line(char *buf, size_t buf_len,
   memcpy(start_line->protocol, sp2 + 1, proto_len);
   start_line->protocol[proto_len] = '\0';
 
-  *start_line_end = (size_t)(lf - buf + 1); // buffer offset just past \n
+  *start_line_size = lf - buf + 1;
 
   return 0;
 }
 
 typedef enum {
+  REQ_SUCCESS = 0,
   REQ_ERROR = -1,
   REQ_OVERFLOW = -2 // socket contains more request data than buffer size
 } request_status;
 
-ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
+// TODO: handle infinite data sending (add max limit for received data)
+int read_request(int sock, char *buffer, size_t buffer_size,
+                 size_t *received_message_size) {
   size_t bytes_read = 0;
   ssize_t chunk = 0;
+  int return_code = REQ_SUCCESS;
 
   while (bytes_read < buffer_size) {
     chunk = recv(sock, buffer + bytes_read, buffer_size - bytes_read, 0);
 
     if (chunk < 0) {
-      return REQ_ERROR;
+      return_code = REQ_SUCCESS;
+      goto end;
     }
 
     if (chunk == 0) {
@@ -134,10 +142,14 @@ ssize_t read_request(int sock, char *buffer, size_t buffer_size) {
   }
 
   if (recv(sock, (char[1]){0}, 1, MSG_PEEK) > 0) {
-    return REQ_OVERFLOW;
+    return_code = REQ_OVERFLOW;
   }
 
-  return (ssize_t)bytes_read;
+  log_msg(MSG_ERROR, false, "bytes read! %zu", bytes_read);
+
+end:
+  *received_message_size = bytes_read;
+  return return_code;
 }
 
 struct header {
@@ -173,7 +185,8 @@ int parse_header(char *line_buf, size_t line_buf_len, struct header *header) {
   return 0;
 }
 
-int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
+int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers,
+                  size_t *headers_len) {
 
   int state = 0;
   size_t header_line_start_index = 0;
@@ -194,7 +207,10 @@ int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
       break;
     case 3:
       if (c == '\n') {
+        *headers_len = i + 1;
         return 0;
+      } else if (c == 'r') {
+        state = 1;
       } else {
         state = 0;
       }
@@ -226,15 +242,38 @@ int parse_headers(char *buffer, size_t buffer_len, struct hashmap *headers) {
 
 int parse_request(struct request *req, char *buffer, size_t buffer_len) {
 
-  size_t offset = 0;
-  if (parse_start_line(buffer, buffer_len, &req->start_line, &offset) != 0) {
-    log_msg(MSG_ERROR, false, "could not parse start line");
-    return -1;
-  }
-  if (parse_headers(buffer + offset, buffer_len - offset, req->headers) != 0) {
+  int result = -1;
+
+  size_t start_line_size;
+  result =
+      parse_start_line(buffer, buffer_len, &req->start_line, &start_line_size);
+
+  size_t headers_size;
+  result = parse_headers(buffer + start_line_size, buffer_len - start_line_size,
+                         req->headers, &headers_size);
+
+  if (result == -1) {
     log_msg(MSG_INFO, false, "parsing headers failed");
     return -1;
   }
+
+  size_t request_head_size = start_line_size + headers_size;
+
+  size_t body_size = buffer_len - request_head_size;
+
+  log_msg(MSG_INFO, false, "request body size is: %zu", body_size);
+
+  req->body = malloc(body_size);
+  if (req->body == NULL) {
+    log_msg(MSG_INFO, false,
+            "malloc failed for body allocation, could not allocate %zu",
+            body_size);
+    return -1;
+  }
+
+  memcpy(req->body, buffer + request_head_size + 1, body_size);
+  req->body_size = body_size;
+
   return 0;
 }
 
@@ -249,18 +288,20 @@ void handle_request(int sock) {
   write_dir_entries_html("/home/shef/dev/projects/http-server/static",
                          "/home/shef/dev/projects/http-server/temp/index.html");
 
-  struct request req;
+  struct request req = {.body = NULL};
   struct hashmap *headers = hashmap_create(free_header_values);
   if (headers == NULL) {
     goto end_connection;
   }
   req.headers = headers;
 
+  size_t bytes_read = 0;
+
   char request_buf[MAX_REQUEST_SIZE + 1];
   struct response res = {.body.fd = -1};
 
-  ssize_t read_result =
-      read_request(sock, request_buf, sizeof(request_buf) - 1);
+  int read_result =
+      read_request(sock, request_buf, sizeof(request_buf) - 1, &bytes_read);
 
   if (read_result == REQ_ERROR) {
 
@@ -276,7 +317,7 @@ void handle_request(int sock) {
     goto end_connection;
   }
 
-  if (parse_request(&req, request_buf, read_result) != 0) {
+  if (parse_request(&req, request_buf, bytes_read) != 0) {
     log_msg(MSG_WARNING, false, "could not parse the request");
     goto end_connection;
   }
@@ -300,6 +341,9 @@ end_connection:
   }
   if (headers != NULL) {
     hashmap_destroy(headers);
+  }
+  if (req.body != NULL) {
+    free(req.body);
   }
 
   shutdown(sock, SHUT_WR);
